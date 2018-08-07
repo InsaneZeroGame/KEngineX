@@ -16,8 +16,7 @@
 #endif
 
 #include <windows.h>
-
-
+#include <DX12Renderer.h>
 
 #include <string>
 #include <wrl.h>
@@ -35,4 +34,5 @@ protected:
 
 private:
 	static HWND m_hwnd;
+    static Renderer::DX12Renderer* m_dx12_renderer;
 };

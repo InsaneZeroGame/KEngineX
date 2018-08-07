@@ -12,6 +12,7 @@
 #include "Win32Application.h"
 
 HWND Win32Application::m_hwnd = nullptr;
+Renderer::DX12Renderer* Win32Application::m_dx12_renderer = nullptr;
 
 int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 {
@@ -47,10 +48,20 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 
 	ShowWindow(m_hwnd, nCmdShow);
 
+    //Init Renderer
+    m_dx12_renderer = new Renderer::DX12Renderer();
+    m_dx12_renderer->SetWindow(m_hwnd);
+
+
+    m_dx12_renderer->Init();
+
+
+
 	// Main sample loop.
 	MSG msg = {};
 	while (msg.message != WM_QUIT)
 	{
+        m_dx12_renderer->Update();
 		// Process any messages in the queue.
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
@@ -59,7 +70,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 		}
 	}
 
-
+    m_dx12_renderer->Destory();
 	// Return this part of the WM_QUIT message to Windows.
 	return static_cast<char>(msg.wParam);
 }

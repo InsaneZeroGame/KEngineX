@@ -6,6 +6,7 @@
 #include <DirectXMath.h>
 #include "d3dx12.h"
 #include <wrl.h>
+#include "DX12RendererConstants.h"
 
 namespace Renderer
 {
@@ -23,6 +24,16 @@ namespace Renderer
             return &GetGpuDevice();
         }
 
+        __forceinline ID3D12CommandQueue* GetCmdQueue()
+        {
+            return m_commandQueue.Get();
+        }
+
+        __forceinline ID3D12Device* GetDevice()
+        {
+            return m_device.Get();
+        }
+
         ~DX12GpuDevice();
     private:
 
@@ -36,6 +47,13 @@ namespace Renderer
         Microsoft::WRL::ComPtr<IDXGIAdapter3> m_adapter;
 
         Microsoft::WRL::ComPtr<ID3D12Device> m_device;
+
+        Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
+
+        Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator;
+
+
+
 
     };//DX12GpuDevice
 }//Renderer

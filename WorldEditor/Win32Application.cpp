@@ -51,11 +51,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
     //Init Renderer
     m_dx12_renderer = new Renderer::DX12Renderer();
     m_dx12_renderer->SetWindow(m_hwnd);
-
-
     m_dx12_renderer->Init();
-
-
 
 	// Main sample loop.
 	MSG msg = {};
@@ -85,7 +81,9 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
     case WM_KEYDOWN:break;
 	case WM_KEYUP:break;
     case WM_PAINT: break;
-	case WM_DESTROY:break;
+	case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
     default:
         break;
 	}

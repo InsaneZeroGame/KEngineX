@@ -5,6 +5,7 @@
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers.
 #endif
 #include <windows.h>
+#include <array>
 #include "DX12GpuDevice.h"
 
 namespace Renderer {
@@ -25,7 +26,11 @@ namespace Renderer {
 
         Microsoft::WRL::ComPtr<IDXGISwapChain3> m_swapChain;
 
-        uint64_t m_current_frameindex;
+        HANDLE m_fenceEvent;
+
+        uint8_t m_current_frameindex;
+
+        uint64_t m_fence_value[DX12RendererConstants::SWAP_CHAIN_COUNT];
 
         Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
 
@@ -33,11 +38,36 @@ namespace Renderer {
 
         Microsoft::WRL::ComPtr<ID3D12Resource> m_renderTargets[DX12RendererConstants::SWAP_CHAIN_COUNT];
 
+        Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_render_cmd[DX12RendererConstants::SWAP_CHAIN_COUNT];
+
+        std::array<ID3D12Fence*, DX12RendererConstants::SWAP_CHAIN_COUNT> m_fences;
+   
+        Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature;
+
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
+
+        Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBuffer;
+        
+        CD3DX12_VIEWPORT m_viewport;
+
+        CD3DX12_RECT m_scissorRect;
+
+        D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
     private:
 
         void InitDevice();
 
         void InitSwapChain();
+
+        void InitFences();
+
+        void InitGraphicsPipelines();
+
+        void LoadAssets();
+
+        void WaitForPreviousFrame();
+
+        void RecordGraphicsCmd();
 
     public:
         // Inherited via IModule
@@ -47,10 +77,7 @@ namespace Renderer {
 
         virtual void Destory() override;
 
-        __forceinline void SetWindow(HWND hWnd,uint64_t height = 1920,uint64_t width = 1080) 
-        {
-            m_hwnd = hWnd;
-        };
+        void SetWindow(HWND hWnd, uint32_t height = 1080, uint32_t width = 1920);
 
     };//DX12Renderer
 }//Renderer

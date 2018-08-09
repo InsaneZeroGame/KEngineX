@@ -189,3 +189,8 @@ void ResetUniquePtrArray(T* uniquePtrArray)
         i.reset();
     }
 }
+
+inline std::wstring GetAssetFullPath(LPCWSTR assetName)
+{
+    return std::wstring(L"D:\\Dev\\KEngineX\\Assets\\Shaders\\") + assetName;
+}

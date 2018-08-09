@@ -57,7 +57,9 @@ Renderer::DX12GpuDevice::DX12GpuDevice():
 
    
 
-    ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator)));
+    ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator[0])));
+    ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator[1])));
+    ThrowIfFailed(m_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_commandAllocator[2])));
 
 
 }
@@ -90,6 +92,24 @@ void Renderer::DX12GpuDevice::GetHardwareAdapter(IDXGIFactory2* pFactory, IDXGIA
     *ppAdapter = adapter.Detach();
 }
 
+
+bool Renderer::DX12GpuDevice::CreateGraphicsCmdList(
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> p_cmdList,
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> p_pipeline_state,
+    D3D12_COMMAND_LIST_TYPE type)
+{
+    auto res = m_device->CreateCommandList(0, type, m_commandAllocator[0].Get(), p_pipeline_state.Get(), IID_PPV_ARGS(&p_cmdList));
+    if (res >= 0)
+    {
+        p_cmdList->Close();
+        return true;
+    }
+    else 
+    {
+        return false;
+    }
+        
+}
 
 Renderer::DX12GpuDevice::~DX12GpuDevice()
 {

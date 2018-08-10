@@ -6,7 +6,8 @@ Renderer::DX12Renderer::DX12Renderer():
     m_device(nullptr),
     m_viewport(0.0f, 0.0f, static_cast<float>(m_window_width), static_cast<float>(m_window_height)),
     m_scissorRect(0, 0, static_cast<LONG>(m_window_width), static_cast<LONG>(m_window_height)),
-    m_fence_value()
+    m_fence_value(),
+    m_render_cmd()
 {
 }
 
@@ -20,15 +21,7 @@ void Renderer::DX12Renderer::Init()
     InitSwapChain();
     InitFences();
     InitGraphicsPipelines();
-    //m_device->CreateGraphicsCmdList(m_render_cmd, m_pipelineState, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
-    auto res = m_device->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, m_device->GetCmdAllcoator(0), m_pipelineState.Get(), IID_PPV_ARGS(&m_render_cmd[0]));
-    res = m_device->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, m_device->GetCmdAllcoator(1), m_pipelineState.Get(), IID_PPV_ARGS(&m_render_cmd[1]));
-    res = m_device->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, m_device->GetCmdAllcoator(2), m_pipelineState.Get(), IID_PPV_ARGS(&m_render_cmd[2]));
-
-    m_render_cmd[0]->Close();
-    m_render_cmd[1]->Close();
-    m_render_cmd[2]->Close();
-
+    InitCmdBuffers();
     LoadAssets();
 }
 
@@ -250,30 +243,40 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
     // However, when ExecuteCommandList() is called on a particular command 
     // list, that command list can then be reset at any time and must be before 
     // re-recording.
-    ThrowIfFailed(m_render_cmd[m_current_frameindex]->Reset(m_device->GetCmdAllcoator(m_current_frameindex), m_pipelineState.Get()));
 
     // Set necessary state.
-    m_render_cmd[m_current_frameindex]->SetGraphicsRootSignature(m_rootSignature.Get());
-    m_render_cmd[m_current_frameindex]->RSSetViewports(1, &m_viewport);
-    m_render_cmd[m_current_frameindex]->RSSetScissorRects(1, &m_scissorRect);
+    m_render_cmd[m_current_frameindex]->Reset();
+    auto current_render_cmd = m_render_cmd[m_current_frameindex]->GetDX12CmdList();
+    current_render_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
+    current_render_cmd->RSSetViewports(1, &m_viewport);
+    current_render_cmd->RSSetScissorRects(1, &m_scissorRect);
 
     // Indicate that the back buffer will be used as a render target.
-    m_render_cmd[m_current_frameindex]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+    current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_current_frameindex, m_rtvDescriptorSize);
-    m_render_cmd[m_current_frameindex]->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+    current_render_cmd->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
     // Record commands.
     const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    m_render_cmd[m_current_frameindex]->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-    m_render_cmd[m_current_frameindex]->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    m_render_cmd[m_current_frameindex]->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-    m_render_cmd[m_current_frameindex]->DrawInstanced(3, 1, 0, 0);
+    current_render_cmd->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+    current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    current_render_cmd->IASetVertexBuffers(0, 1, &m_vertexBufferView);
+    current_render_cmd->DrawInstanced(3, 1, 0, 0);
 
     // Indicate that the back buffer will now be used to present.
-    m_render_cmd[m_current_frameindex]->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+    current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
-    ThrowIfFailed(m_render_cmd[m_current_frameindex]->Close());
+    ThrowIfFailed(current_render_cmd->Close());
+}
+
+void Renderer::DX12Renderer::InitCmdBuffers()
+{
+    for (auto i = 0; i < m_render_cmd.size();++i)
+    {
+        m_render_cmd[i] = new DX12RenderCommndBuffer(m_pipelineState.Get(),D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+        m_render_cmd[i]->Close();
+    }
 }
 
 void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t height, uint32_t width)
@@ -295,7 +298,7 @@ void Renderer::DX12Renderer::Update()
     RecordGraphicsCmd();
 
     // Execute the command list.
-    ID3D12CommandList* ppCommandLists[] = { m_render_cmd[m_current_frameindex].Get() };
+    ID3D12CommandList* ppCommandLists[] = { m_render_cmd[m_current_frameindex]->GetDX12CmdList() };
     m_device->GetCmdQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
     // Present the frame.
@@ -306,4 +309,7 @@ void Renderer::DX12Renderer::Update()
 
 void Renderer::DX12Renderer::Destory()
 {
+    for (auto cmd : m_render_cmd) {
+        if (cmd) delete cmd;
+    }
 }

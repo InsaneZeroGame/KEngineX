@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <array>
 #include "DX12GpuDevice.h"
+#include "DX12ComandBuffer.h"
 
 namespace Renderer {
     class DX12Renderer final: public KFramework::INoCopy,public KFramework::IModule
@@ -38,7 +39,7 @@ namespace Renderer {
 
         Microsoft::WRL::ComPtr<ID3D12Resource> m_renderTargets[DX12RendererConstants::SWAP_CHAIN_COUNT];
 
-        Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> m_render_cmd[DX12RendererConstants::SWAP_CHAIN_COUNT];
+        std::array<DX12RenderCommndBuffer*, DX12RendererConstants::SWAP_CHAIN_COUNT> m_render_cmd;
 
         std::array<ID3D12Fence*, DX12RendererConstants::SWAP_CHAIN_COUNT> m_fences;
    
@@ -68,6 +69,8 @@ namespace Renderer {
         void WaitForPreviousFrame();
 
         void RecordGraphicsCmd();
+
+        void InitCmdBuffers();
 
     public:
         // Inherited via IModule

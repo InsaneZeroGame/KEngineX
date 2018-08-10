@@ -34,16 +34,6 @@ namespace Renderer
             return m_device.Get();
         }
 
-        __forceinline ID3D12CommandAllocator* GetCmdAllcoator(uint8_t p_index)
-        {
-            return m_commandAllocator[p_index].Get();
-        }
-
-        bool CreateGraphicsCmdList(
-            Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> p_cmdList,
-            Microsoft::WRL::ComPtr<ID3D12PipelineState> p_pipeline_state,
-            D3D12_COMMAND_LIST_TYPE p_type);
-
         ~DX12GpuDevice();
     private:
 
@@ -59,11 +49,6 @@ namespace Renderer
         Microsoft::WRL::ComPtr<ID3D12Device> m_device;
 
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
-
-        Microsoft::WRL::ComPtr<ID3D12CommandAllocator> m_commandAllocator[3];
-
-
-
 
     };//DX12GpuDevice
 }//Renderer

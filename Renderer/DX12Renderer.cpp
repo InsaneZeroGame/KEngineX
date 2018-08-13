@@ -235,14 +235,6 @@ void Renderer::DX12Renderer::WaitForPreviousFrame()
 
 void Renderer::DX12Renderer::RecordGraphicsCmd()
 {
-    // Command list allocators can only be reset when the associated 
-    // command lists have finished execution on the GPU; apps should use 
-    // fences to determine GPU execution progress.
-    //ThrowIfFailed(m_device->GetCmdAllcoator(m_current_frameindex)->Reset());
-
-    // However, when ExecuteCommandList() is called on a particular command 
-    // list, that command list can then be reset at any time and must be before 
-    // re-recording.
 
     // Set necessary state.
     m_render_cmd[m_current_frameindex]->Reset();

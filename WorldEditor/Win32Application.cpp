@@ -27,7 +27,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 	windowClass.lpszClassName = "KEngine";
 	RegisterClassEx(&windowClass);
 
-	RECT windowRect = { 0, 0, static_cast<LONG>(1920), static_cast<LONG>(1080)};
+	RECT windowRect = { 0, 0, static_cast<LONG>(800), static_cast<LONG>(600)};
 	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
 
 	// Create the window and store a handle to it.

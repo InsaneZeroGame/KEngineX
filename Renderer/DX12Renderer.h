@@ -8,6 +8,7 @@
 #include <array>
 #include "DX12GpuDevice.h"
 #include "DX12ComandBuffer.h"
+#include "DX12TransferManager.h"
 
 namespace Renderer {
     class DX12Renderer final: public KFramework::INoCopy,public KFramework::IModule

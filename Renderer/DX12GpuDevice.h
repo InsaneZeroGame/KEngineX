@@ -7,6 +7,7 @@
 #include "d3dx12.h"
 #include <wrl.h>
 #include "DX12RendererConstants.h"
+#include "Utility.h"
 
 namespace Renderer
 {

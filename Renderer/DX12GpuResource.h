@@ -18,11 +18,15 @@
 namespace Renderer
 {
 
-    class GpuResource
+    class DX12TransferManager;
+
+
+    class DX12GpuResource
     {
+        friend DX12TransferManager;
 
     public:
-        GpuResource() :
+        DX12GpuResource() :
             m_GpuVirtualAddress(0),
             m_UserAllocatedMemory(nullptr),
             m_UsageState(D3D12_RESOURCE_STATE_COMMON),
@@ -30,7 +34,7 @@ namespace Renderer
         {
         }
 
-        GpuResource(ID3D12Resource* pResource, D3D12_RESOURCE_STATES CurrentState) :
+        DX12GpuResource(ID3D12Resource* pResource, D3D12_RESOURCE_STATES CurrentState) :
             m_GpuVirtualAddress(0),
             m_UserAllocatedMemory(nullptr),
             m_pResource(pResource),

@@ -16,14 +16,9 @@
 namespace Renderer
 {
 
-    void GpuBuffer::Create(const std::wstring& name, uint32_t NumElements, uint32_t ElementSize, const void* initialData)
+    void DX12GpuBuffer::Create(const std::wstring& name,uint64_t size)
     {
-        GpuResource::Destroy();
-
-        m_ElementCount = NumElements;
-        m_ElementSize = ElementSize;
-        m_BufferSize = NumElements * ElementSize;
-
+        DX12GpuResource::Destroy();
         D3D12_RESOURCE_DESC ResourceDesc = DescribeBuffer();
 
         m_UsageState = D3D12_RESOURCE_STATE_COMMON;
@@ -40,8 +35,8 @@ namespace Renderer
 
         m_GpuVirtualAddress = m_pResource->GetGPUVirtualAddress();
 
-        if (initialData)
-            CommandContext::InitializeBuffer(*this, initialData, m_BufferSize);
+        //if (initialData)
+        //    CommandContext::InitializeBuffer(*this, initialData, m_BufferSize);
 
 #ifdef RELEASE
         (name);
@@ -53,23 +48,19 @@ namespace Renderer
     }
 
     // Sub-Allocate a buffer out of a pre-allocated heap.  If initial data is provided, it will be copied into the buffer using the default command context.
-    void GpuBuffer::CreatePlaced(const std::wstring& name, ID3D12Heap* pBackingHeap, uint32_t HeapOffset, uint32_t NumElements, uint32_t ElementSize,
-        const void* initialData)
+    void DX12GpuBuffer::CreatePlaced(const std::wstring& name, ID3D12Heap* pBackingHeap, uint64_t heap_offset,uint64_t size)
     {
-        m_ElementCount = NumElements;
-        m_ElementSize = ElementSize;
-        m_BufferSize = NumElements * ElementSize;
-
+      
         D3D12_RESOURCE_DESC ResourceDesc = DescribeBuffer();
 
         m_UsageState = D3D12_RESOURCE_STATE_COMMON;
 
-        m_device->GetDevice()->CreatePlacedResource(pBackingHeap, HeapOffset, &ResourceDesc, m_UsageState, nullptr, IID_PPV_ARGS(&m_pResource));
+        m_device->GetDevice()->CreatePlacedResource(pBackingHeap, heap_offset, &ResourceDesc, m_UsageState, nullptr, IID_PPV_ARGS(&m_pResource));
 
         m_GpuVirtualAddress = m_pResource->GetGPUVirtualAddress();
 
-        if (initialData)
-            CommandContext::InitializeBuffer(*this, initialData, m_BufferSize);
+        //if (initialData)
+        //    CommandContext::InitializeBuffer(*this, initialData, m_BufferSize);
 
 #ifdef RELEASE
         (name);
@@ -87,22 +78,22 @@ namespace Renderer
     //    Create(name, NumElements, ElementSize, initialData);
     //}
 
-    D3D12_CPU_DESCRIPTOR_HANDLE GpuBuffer::CreateConstantBufferView(uint32_t Offset, uint32_t Size) const
-    {
-        _ASSERT(Offset + Size <= m_BufferSize);
+    //D3D12_CPU_DESCRIPTOR_HANDLE DX12GpuBuffer::CreateConstantBufferView(uint32_t Offset, uint32_t Size) const
+    //{
+    //    _ASSERT(Offset + Size <= m_BufferSize);
+    //
+    //    Size = Math::AlignUp(Size, 16);
+    //
+    //    D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
+    //    CBVDesc.BufferLocation = m_GpuVirtualAddress + (size_t)Offset;
+    //    CBVDesc.SizeInBytes = Size;
+    //
+    //    D3D12_CPU_DESCRIPTOR_HANDLE hCBV = AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    //    g_Device->CreateConstantBufferView(&CBVDesc, hCBV);
+    //    return hCBV;
+    //}
 
-        Size = Math::AlignUp(Size, 16);
-
-        D3D12_CONSTANT_BUFFER_VIEW_DESC CBVDesc;
-        CBVDesc.BufferLocation = m_GpuVirtualAddress + (size_t)Offset;
-        CBVDesc.SizeInBytes = Size;
-
-        D3D12_CPU_DESCRIPTOR_HANDLE hCBV = AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        g_Device->CreateConstantBufferView(&CBVDesc, hCBV);
-        return hCBV;
-    }
-
-    D3D12_RESOURCE_DESC GpuBuffer::DescribeBuffer(void)
+    D3D12_RESOURCE_DESC DX12GpuBuffer::DescribeBuffer(void)
     {
         _ASSERT(m_BufferSize != 0);
 

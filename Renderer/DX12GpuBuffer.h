@@ -21,22 +21,22 @@
 namespace Renderer
 {
 
-    class GpuBuffer : public GpuResource
+    class DX12GpuBuffer : public DX12GpuResource
     {
     public:
-        virtual ~GpuBuffer() { Destroy(); }
+        virtual ~DX12GpuBuffer() { Destroy(); }
 
         // Create a buffer.  If initial data is provided, it will be copied into the buffer using the default command context.
-        void Create(const std::wstring& name, uint32_t NumElements, uint32_t ElementSize,
-            const void* initialData = nullptr);
+        void Create(const std::wstring& name, uint64_t size);
+
 
         // Create a buffer in ESRAM.  On Windows, ESRAM is not used.
         //void Create( const std::wstring& name, uint32_t NumElements, uint32_t ElementSize,
         //    EsramAllocator& Allocator, const void* initialData = nullptr);
 
         // Sub-Allocate a buffer out of a pre-allocated heap.  If initial data is provided, it will be copied into the buffer using the default command context.
-        void CreatePlaced(const std::wstring& name, ID3D12Heap* pBackingHeap, uint32_t HeapOffset, uint32_t NumElements, uint32_t ElementSize,
-            const void* initialData = nullptr);
+        void CreatePlaced(const std::wstring& name, ID3D12Heap* pBackingHeap,uint64_t heap_offset,uint64_t size);
+
 
         const D3D12_CPU_DESCRIPTOR_HANDLE& GetUAV(void) const { return m_UAV; }
         const D3D12_CPU_DESCRIPTOR_HANDLE& GetSRV(void) const { return m_SRV; }
@@ -65,7 +65,7 @@ namespace Renderer
 
     protected:
 
-        GpuBuffer(void) : m_BufferSize(0), m_ElementCount(0), m_ElementSize(0),
+        DX12GpuBuffer(void) : m_BufferSize(0), m_ElementCount(0), m_ElementSize(0),
             m_device(nullptr)
         {
             m_ResourceFlags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -73,7 +73,7 @@ namespace Renderer
             m_SRV.ptr = 0;
         }
 
-        GpuBuffer(DX12GpuDevice* p_device) : m_BufferSize(0), m_ElementCount(0), m_ElementSize(0),
+        DX12GpuBuffer(DX12GpuDevice* p_device) : m_BufferSize(0), m_ElementCount(0), m_ElementSize(0),
             m_device(p_device)
         {
             m_ResourceFlags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
@@ -94,7 +94,7 @@ namespace Renderer
         DX12GpuDevice* m_device;
     };
 
-    inline D3D12_VERTEX_BUFFER_VIEW GpuBuffer::VertexBufferView(size_t Offset, uint32_t Size, uint32_t Stride) const
+    inline D3D12_VERTEX_BUFFER_VIEW DX12GpuBuffer::VertexBufferView(size_t Offset, uint32_t Size, uint32_t Stride) const
     {
         D3D12_VERTEX_BUFFER_VIEW VBView;
         VBView.BufferLocation = m_GpuVirtualAddress + Offset;
@@ -103,7 +103,7 @@ namespace Renderer
         return VBView;
     }
 
-    inline D3D12_INDEX_BUFFER_VIEW GpuBuffer::IndexBufferView(size_t Offset, uint32_t Size, bool b32Bit) const
+    inline D3D12_INDEX_BUFFER_VIEW DX12GpuBuffer::IndexBufferView(size_t Offset, uint32_t Size, bool b32Bit) const
     {
         D3D12_INDEX_BUFFER_VIEW IBView;
         IBView.BufferLocation = m_GpuVirtualAddress + Offset;
@@ -111,5 +111,6 @@ namespace Renderer
         IBView.SizeInBytes = Size;
         return IBView;
     }
+    
 
 }//Renderer

@@ -18,6 +18,7 @@ Renderer::DX12Renderer::~DX12Renderer()
 void Renderer::DX12Renderer::Init()
 {
     InitDevice();
+    auto& manager = DX12TransferManager::GetTransferManager();
     InitSwapChain();
     InitFences();
     InitGraphicsPipelines();
@@ -225,7 +226,6 @@ void Renderer::DX12Renderer::WaitForPreviousFrame()
     {
         ThrowIfFailed(m_fences[swap_chain_frame]->SetEventOnCompletion(m_fence_value[swap_chain_frame], m_fenceEvent));
         WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
-
     }
 
     // Set the fence value for the next frame.

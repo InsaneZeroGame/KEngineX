@@ -12,7 +12,7 @@ namespace Renderer
             m_device(DX12GpuDevice::GetGpuDevicePtr()),
             m_cmd_allocator(nullptr)
         {
-            m_device->GetDevice()->CreateCommandAllocator(p_type, IID_PPV_ARGS(&m_cmd_allocator));
+            m_device->GetDX12Device()->CreateCommandAllocator(p_type, IID_PPV_ARGS(&m_cmd_allocator));
         }
         virtual ~DX12CommandBuffer()
         {
@@ -34,12 +34,13 @@ namespace Renderer
     class DX12RenderCommndBuffer final : public DX12CommandBuffer
     {
     public:
-        DX12RenderCommndBuffer(ID3D12PipelineState* p_state,D3D12_COMMAND_LIST_TYPE p_type):
-            DX12CommandBuffer(p_type),
+        DX12RenderCommndBuffer(ID3D12PipelineState* p_state):
+            DX12CommandBuffer(D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT),
             m_cmd_buffer(nullptr),
             m_state(p_state)
         {
-            m_device->GetDevice()->CreateCommandList(0, p_type, m_cmd_allocator, p_state, IID_PPV_ARGS(&m_cmd_buffer));
+            m_device->GetDX12Device()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT, m_cmd_allocator, p_state, IID_PPV_ARGS(&m_cmd_buffer));
+            m_cmd_buffer->Close();
         }
         ~DX12RenderCommndBuffer()
         {
@@ -54,7 +55,10 @@ namespace Renderer
 
         virtual void Flush() const 
         {
-        
+            Close();
+            ID3D12CommandList* l_cmd_lists[] = {m_cmd_buffer};
+            m_device->GetCmdQueue()->ExecuteCommandLists(1, l_cmd_lists);
+
         }
         virtual void Close() const
         {

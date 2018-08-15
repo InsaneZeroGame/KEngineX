@@ -70,9 +70,9 @@ void Renderer::DX12Renderer::InitSwapChain()
         rtvHeapDesc.NumDescriptors = DX12RendererConstants::SWAP_CHAIN_COUNT;
         rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        ThrowIfFailed(m_device->GetDevice()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap)));
+        ThrowIfFailed(m_device->GetDX12Device()->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap)));
 
-        m_rtvDescriptorSize = m_device->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+        m_rtvDescriptorSize = m_device->GetDX12Device()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     }
 
     // Create frame resources.
@@ -83,7 +83,7 @@ void Renderer::DX12Renderer::InitSwapChain()
         for (UINT n = 0; n < DX12RendererConstants::SWAP_CHAIN_COUNT; n++)
         {
             ThrowIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
-            m_device->GetDevice()->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvHandle);
+            m_device->GetDX12Device()->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvHandle);
             rtvHandle.Offset(1, m_rtvDescriptorSize);
         }
     }
@@ -95,7 +95,7 @@ void Renderer::DX12Renderer::InitFences()
     //Present Fence
     for (auto i = 0; i < DX12RendererConstants::SWAP_CHAIN_COUNT;++i)
     {
-        m_device->GetDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE,IID_PPV_ARGS(&m_fences[i]));
+        m_device->GetDX12Device()->CreateFence(0, D3D12_FENCE_FLAG_NONE,IID_PPV_ARGS(&m_fences[i]));
     }
     m_fence_value[0] = 1;
 
@@ -121,7 +121,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         ComPtr<ID3DBlob> signature;
         ComPtr<ID3DBlob> error;
         ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
-        ThrowIfFailed(m_device->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
+        ThrowIfFailed(m_device->GetDX12Device()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
     }
 
     // Create the pipeline state, which includes compiling and loading shaders.
@@ -161,7 +161,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         psoDesc.NumRenderTargets = 1;
         psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
         psoDesc.SampleDesc.Count = 1;
-        ThrowIfFailed(m_device->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
+        ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
     }
 
 }
@@ -189,23 +189,29 @@ void Renderer::DX12Renderer::LoadAssets()
         // recommended. Every time the GPU needs it, the upload heap will be marshalled 
         // over. Please read up on Default Heap usage. An upload heap is used here for 
         // code simplicity and because there are very few verts to actually transfer.
-        ThrowIfFailed(m_device->GetDevice()->CreateCommittedResource(
-            &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-            D3D12_HEAP_FLAG_NONE,
-            &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
-            D3D12_RESOURCE_STATE_GENERIC_READ,
-            nullptr,
-            IID_PPV_ARGS(&m_vertexBuffer)));
+        //ThrowIfFailed(m_device->GetDX12Device()->CreateCommittedResource(
+        //    &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+        //    D3D12_HEAP_FLAG_NONE,
+        //    &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
+        //    D3D12_RESOURCE_STATE_GENERIC_READ,
+        //    nullptr,
+        //    IID_PPV_ARGS(&m_vertexBuffer)));
+        //
+        //// Copy the triangle data to the vertex buffer.
+        //UINT8* pVertexDataBegin;
+        //CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
+        //ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
+        //memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+        //m_vertexBuffer->Unmap(0, nullptr);
 
-        // Copy the triangle data to the vertex buffer.
-        UINT8* pVertexDataBegin;
-        CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
-        ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-        memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
-        m_vertexBuffer->Unmap(0, nullptr);
+        TransferJob l_vertex_upload_job = {};
+        l_vertex_upload_job.data = triangleVertices;
+        l_vertex_upload_job.data_size = sizeof(triangleVertices);
+        l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
 
+        DX12TransferManager::GetTransferManager().AddJob(&l_vertex_upload_job, true);
         // Initialize the vertex buffer view.
-        m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
+        m_vertexBufferView.BufferLocation = l_vertex_upload_job.gpu_va_address;
         m_vertexBufferView.StrideInBytes = sizeof(Vertex);
         m_vertexBufferView.SizeInBytes = vertexBufferSize;
         //WaitForPreviousFrame();
@@ -266,8 +272,7 @@ void Renderer::DX12Renderer::InitCmdBuffers()
 {
     for (auto i = 0; i < m_render_cmd.size();++i)
     {
-        m_render_cmd[i] = new DX12RenderCommndBuffer(m_pipelineState.Get(),D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
-        m_render_cmd[i]->Close();
+        m_render_cmd[i] = new DX12RenderCommndBuffer(m_pipelineState.Get());
     }
 }
 
@@ -302,6 +307,10 @@ void Renderer::DX12Renderer::Update()
 void Renderer::DX12Renderer::Destory()
 {
     for (auto cmd : m_render_cmd) {
-        if (cmd) delete cmd;
+        if (cmd)
+        {
+            delete cmd;
+            cmd = nullptr;
+        }
     }
 }

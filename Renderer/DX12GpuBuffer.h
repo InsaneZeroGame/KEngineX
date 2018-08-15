@@ -35,7 +35,7 @@ namespace Renderer
         //    EsramAllocator& Allocator, const void* initialData = nullptr);
 
         // Sub-Allocate a buffer out of a pre-allocated heap.  If initial data is provided, it will be copied into the buffer using the default command context.
-        void CreatePlaced(const std::wstring& name, ID3D12Heap* pBackingHeap,uint64_t heap_offset,uint64_t size);
+        void CreatePlaced(const std::wstring& name, ID3D12Heap* pBackingHeap,uint64_t heap_offset,uint64_t size, D3D12_RESOURCE_STATES state);
 
 
         const D3D12_CPU_DESCRIPTOR_HANDLE& GetUAV(void) const { return m_UAV; }
@@ -63,10 +63,10 @@ namespace Renderer
         uint32_t GetElementCount() const { return m_ElementCount; }
         uint32_t GetElementSize() const { return m_ElementSize; }
 
-    protected:
+    public:
 
         DX12GpuBuffer(void) : m_BufferSize(0), m_ElementCount(0), m_ElementSize(0),
-            m_device(nullptr)
+            m_device(DX12GpuDevice::GetGpuDevicePtr())
         {
             m_ResourceFlags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
             m_UAV.ptr = 0;
@@ -80,9 +80,9 @@ namespace Renderer
             m_UAV.ptr = 0;
             m_SRV.ptr = 0;
         }
-
+    protected:
         D3D12_RESOURCE_DESC DescribeBuffer(void);
-        virtual void CreateDerivedViews(void) = 0;
+        virtual void CreateDerivedViews(void) {};
 
         D3D12_CPU_DESCRIPTOR_HANDLE m_UAV;
         D3D12_CPU_DESCRIPTOR_HANDLE m_SRV;

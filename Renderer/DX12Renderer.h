@@ -48,7 +48,7 @@ namespace Renderer {
 
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
 
-        Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBuffer;
+        //Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBuffer;
         
         CD3DX12_VIEWPORT m_viewport;
 

@@ -30,7 +30,7 @@ namespace Renderer
             return m_commandQueue.Get();
         }
 
-        __forceinline ID3D12Device* GetDevice()
+        __forceinline ID3D12Device* GetDX12Device()
         {
             return m_device.Get();
         }

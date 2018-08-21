@@ -17,7 +17,6 @@
 
 #include <windows.h>
 #include <DX12Renderer.h>
-
 #include <string>
 #include <wrl.h>
 #include <shellapi.h>
@@ -34,5 +33,5 @@ protected:
 
 private:
 	static HWND m_hwnd;
-    static Renderer::DX12Renderer* m_dx12_renderer;
+    static Renderer::IRenderer* m_dx12_renderer;
 };

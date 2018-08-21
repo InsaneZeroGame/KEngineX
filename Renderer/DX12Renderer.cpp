@@ -2,7 +2,7 @@
 #include "DXSampleHelper.h"
 
 Renderer::DX12Renderer::DX12Renderer():
-    m_hwnd(nullptr),
+    IRenderer(),
     m_device(nullptr),
     m_viewport(0.0f, 0.0f, static_cast<float>(m_window_width), static_cast<float>(m_window_height)),
     m_scissorRect(0, 0, static_cast<LONG>(m_window_width), static_cast<LONG>(m_window_height)),
@@ -23,7 +23,6 @@ void Renderer::DX12Renderer::Init()
     InitFences();
     InitGraphicsPipelines();
     InitCmdBuffers();
-    LoadAssets();
 }
 
 
@@ -166,7 +165,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
 
 }
 
-void Renderer::DX12Renderer::LoadAssets()
+void Renderer::DX12Renderer::LoadScene(GamePlay::GamesScene*)
 {
     {
         struct Vertex
@@ -184,25 +183,6 @@ void Renderer::DX12Renderer::LoadAssets()
 
         const UINT vertexBufferSize = sizeof(triangleVertices);
 
-
-        // Note: using upload heaps to transfer static data like vert buffers is not 
-        // recommended. Every time the GPU needs it, the upload heap will be marshalled 
-        // over. Please read up on Default Heap usage. An upload heap is used here for 
-        // code simplicity and because there are very few verts to actually transfer.
-        //ThrowIfFailed(m_device->GetDX12Device()->CreateCommittedResource(
-        //    &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-        //    D3D12_HEAP_FLAG_NONE,
-        //    &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
-        //    D3D12_RESOURCE_STATE_GENERIC_READ,
-        //    nullptr,
-        //    IID_PPV_ARGS(&m_vertexBuffer)));
-        //
-        //// Copy the triangle data to the vertex buffer.
-        //UINT8* pVertexDataBegin;
-        //CD3DX12_RANGE readRange(0, 0);		// We do not intend to read from this resource on the CPU.
-        //ThrowIfFailed(m_vertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-        //memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
-        //m_vertexBuffer->Unmap(0, nullptr);
 
         TransferJob l_vertex_upload_job = {};
         l_vertex_upload_job.data = triangleVertices;

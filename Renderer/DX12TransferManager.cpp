@@ -122,7 +122,7 @@ void Renderer::DX12TransferManager::DoOneJob(TransferJob* p_job)
     switch (p_job->type)
     {
     case TransferJob::JobType::UPLOAD_VERTEX_BUFFER:
-        UploadDataToVertexBuffer(p_job);
+        UploadDataToVertexBuffer(p_job);  
         break;
     default:
         break;

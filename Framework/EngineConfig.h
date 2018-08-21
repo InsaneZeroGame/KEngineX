@@ -1,8 +1,6 @@
 #pragma once
 
 
-
-
 namespace KEngineConstants
 {
     const unsigned int WINDOW_HEIGHT = 600;

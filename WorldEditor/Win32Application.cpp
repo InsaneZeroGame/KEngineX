@@ -12,7 +12,7 @@
 #include "Win32Application.h"
 
 HWND Win32Application::m_hwnd = nullptr;
-Renderer::DX12Renderer* Win32Application::m_dx12_renderer = nullptr;
+Renderer::IRenderer* Win32Application::m_dx12_renderer = nullptr;
 
 int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 {
@@ -27,7 +27,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 	windowClass.lpszClassName = "KEngine";
 	RegisterClassEx(&windowClass);
 
-	RECT windowRect = { 0, 0, static_cast<LONG>(800), static_cast<LONG>(600)};
+	RECT windowRect = { 0, 0, static_cast<LONG>(KEngineConstants::WINDOW_WIDTH), static_cast<LONG>(KEngineConstants::WINDOW_HEIGHT)};
 	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
 
 	// Create the window and store a handle to it.
@@ -50,7 +50,8 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 
     //Init Renderer
     m_dx12_renderer = new Renderer::DX12Renderer();
-    m_dx12_renderer->SetWindow(m_hwnd);
+    m_dx12_renderer->SetWindow(m_hwnd, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
+    m_dx12_renderer->LoadScene(nullptr);
     m_dx12_renderer->Init();
 
 	// Main sample loop.

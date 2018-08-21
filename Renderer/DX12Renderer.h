@@ -1,6 +1,5 @@
 #pragma once
-#include <INoCopy.h>
-#include <IModule.h>
+#include <IRenderer.h>
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers.
 #endif
@@ -11,18 +10,14 @@
 #include "DX12TransferManager.h"
 
 namespace Renderer {
-    class DX12Renderer final: public KFramework::INoCopy,public KFramework::IModule
+    class DX12Renderer final: public IRenderer
     {
     public:
         DX12Renderer();
         ~DX12Renderer();
     private:
 
-        HWND m_hwnd;
-
-        uint32_t m_window_height;
-
-        uint32_t m_window_width;
+        
 
         DX12GpuDevice* m_device;
 
@@ -65,8 +60,6 @@ namespace Renderer {
 
         void InitGraphicsPipelines();
 
-        void LoadAssets();
-
         void WaitForPreviousFrame();
 
         void RecordGraphicsCmd();
@@ -81,7 +74,9 @@ namespace Renderer {
 
         virtual void Destory() override;
 
-        void SetWindow(HWND hWnd, uint32_t height = 1080, uint32_t width = 1920);
+        virtual void SetWindow(HWND hWnd, uint32_t height, uint32_t width) override;
+
+        virtual void LoadScene(GamePlay::GamesScene*) override;
 
     };//DX12Renderer
 }//Renderer

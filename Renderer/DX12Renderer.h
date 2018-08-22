@@ -17,8 +17,6 @@ namespace Renderer {
         ~DX12Renderer();
     private:
 
-        
-
         DX12GpuDevice* m_device;
 
         Microsoft::WRL::ComPtr<IDXGISwapChain3> m_swapChain;
@@ -49,7 +47,9 @@ namespace Renderer {
 
         CD3DX12_RECT m_scissorRect;
 
-        D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+        //D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
+
+        std::shared_ptr<gameplay::GamesScene> m_scene;
     private:
 
         void InitDevice();
@@ -76,7 +76,7 @@ namespace Renderer {
 
         virtual void SetWindow(HWND hWnd, uint32_t height, uint32_t width) override;
 
-        virtual void LoadScene(GamePlay::GamesScene*) override;
+        virtual void LoadScene(std::shared_ptr<gameplay::GamesScene>) override;
 
     };//DX12Renderer
 }//Renderer

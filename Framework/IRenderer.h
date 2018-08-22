@@ -37,7 +37,7 @@ namespace Renderer
         {
         }
 
-        virtual void LoadScene(GamePlay::GamesScene*) = 0;
+        virtual void LoadScene(std::shared_ptr<gameplay::GamesScene>) = 0;
         virtual void SetWindow(HWND hWnd, uint32_t height, uint32_t width) = 0;
     protected:
         HWND m_hwnd;

@@ -14,6 +14,37 @@
 HWND Win32Application::m_hwnd = nullptr;
 Renderer::IRenderer* Win32Application::m_dx12_renderer = nullptr;
 
+
+
+
+static std::shared_ptr<gameplay::GamesScene> PrepareADummyScene() 
+{
+
+    std::vector<float> triangleVertices =
+    {
+       0.0f, 0.25f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
+       0.25f, -0.25f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
+       -0.25f, -0.25f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
+    };
+
+    using namespace gameplay;
+    auto dummy_scene = std::make_shared<gameplay::GamesScene>();
+    auto dummy_material = std::make_shared<GameMeterial>();
+    GameMesh dummy_mesh;
+    dummy_mesh.m_vertices = {
+        0.0f, 0.25f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
+        0.25f, -0.25f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
+        -0.25f, -0.25f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
+    };;
+    dummy_material->m_meshes.push_back(dummy_mesh);
+    dummy_scene->dummy_actor->AddMaterial(dummy_material);
+    dummy_material.reset();
+    return dummy_scene;
+}
+
+
+
+
 int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 {
 
@@ -51,7 +82,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
     //Init Renderer
     m_dx12_renderer = new Renderer::DX12Renderer();
     m_dx12_renderer->SetWindow(m_hwnd, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
-    m_dx12_renderer->LoadScene(nullptr);
+    m_dx12_renderer->LoadScene(PrepareADummyScene());
     m_dx12_renderer->Init();
 
 	// Main sample loop.

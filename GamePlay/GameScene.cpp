@@ -1,9 +1,10 @@
 #include "GameScene.h"
 
-GamePlay::GamesScene::GamesScene()
+gameplay::GamesScene::GamesScene() :
+    dummy_actor(std::make_shared<GameActor>("DummyActorLiu"))
 {
 }
 
-GamePlay::GamesScene::~GamesScene()
+gameplay::GamesScene::~GamesScene()
 {
 }

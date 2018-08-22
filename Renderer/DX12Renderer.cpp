@@ -165,8 +165,10 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
 
 }
 
-void Renderer::DX12Renderer::LoadScene(GamePlay::GamesScene*)
+void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_scene)
 {
+    assert(p_scene && "Nullptr!");
+    m_scene = p_scene;
     {
         struct Vertex
         {
@@ -174,26 +176,30 @@ void Renderer::DX12Renderer::LoadScene(GamePlay::GamesScene*)
             float color[4];
         };
         // Define the geometry for a triangle.
-        Vertex triangleVertices[] =
+
+        for (auto& material : m_scene->dummy_actor->m_meterial)
         {
-            { { 0.0f, 0.25f, 0.0f },{ 1.0f, 0.0f, 0.0f, 1.0f } },
-        { { 0.25f, -0.25f, 0.0f },{ 0.0f, 1.0f, 0.0f, 1.0f } },
-        { { -0.25f, -0.25f, 0.0f },{ 0.0f, 0.0f, 1.0f, 1.0f } }
-        };
-
-        const UINT vertexBufferSize = sizeof(triangleVertices);
+            for (auto& mesh : material->m_meshes)
+            {
+                const UINT vertexBufferSize = mesh.m_vertices.size() * sizeof(float);
 
 
-        TransferJob l_vertex_upload_job = {};
-        l_vertex_upload_job.data = triangleVertices;
-        l_vertex_upload_job.data_size = sizeof(triangleVertices);
-        l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
+                TransferJob l_vertex_upload_job = {};
+                l_vertex_upload_job.data = mesh.m_vertices.data();
+                l_vertex_upload_job.data_size = vertexBufferSize;
+                l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
 
-        DX12TransferManager::GetTransferManager().AddJob(&l_vertex_upload_job, true);
-        // Initialize the vertex buffer view.
-        m_vertexBufferView.BufferLocation = l_vertex_upload_job.gpu_va_address;
-        m_vertexBufferView.StrideInBytes = sizeof(Vertex);
-        m_vertexBufferView.SizeInBytes = vertexBufferSize;
+                DX12TransferManager::GetTransferManager().AddJob(&l_vertex_upload_job, true);
+                // Initialize the vertex buffer view.
+                mesh.m_mesh_desc.BufferLocation = l_vertex_upload_job.gpu_va_address;
+                mesh.m_mesh_desc.StrideInBytes = sizeof(Vertex);
+                mesh.m_mesh_desc.SizeInBytes = vertexBufferSize;
+            }
+        }
+
+        
+
+        
         //WaitForPreviousFrame();
     }
 }
@@ -239,8 +245,22 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
     const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
     current_render_cmd->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    current_render_cmd->IASetVertexBuffers(0, 1, &m_vertexBufferView);
-    current_render_cmd->DrawInstanced(3, 1, 0, 0);
+
+    for (auto& material : m_scene->dummy_actor->m_meterial)
+    {
+        for (auto& mesh : material->m_meshes)
+        {
+            D3D12_VERTEX_BUFFER_VIEW l_mesh_desc = {};
+            l_mesh_desc.BufferLocation = mesh.m_mesh_desc.BufferLocation;
+            l_mesh_desc.SizeInBytes = mesh.m_mesh_desc.SizeInBytes;
+            l_mesh_desc.StrideInBytes = mesh.m_mesh_desc.StrideInBytes;
+
+
+            current_render_cmd->IASetVertexBuffers(0, 1, &l_mesh_desc);
+            current_render_cmd->DrawInstanced(3, 1, 0, 0);
+        }
+    }
+    
 
     // Indicate that the back buffer will now be used to present.
     current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));

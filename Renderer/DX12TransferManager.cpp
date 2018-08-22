@@ -80,7 +80,7 @@ void Renderer::DX12TransferManager::TransitionResource(DX12GpuResource& Resource
 
     if (OldState != NewState)
     {
-        _ASSERT(m_NumBarriersToFlush < 16, "Exceeded arbitrary limit on buffered barriers");
+        _ASSERT(m_NumBarriersToFlush < 16 && "Exceeded arbitrary limit on buffered barriers");
         D3D12_RESOURCE_BARRIER& BarrierDesc = m_ResourceBarrierBuffer[m_NumBarriersToFlush++];
 
         BarrierDesc.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;

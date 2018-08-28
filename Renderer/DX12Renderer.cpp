@@ -1,5 +1,6 @@
 #include "DX12Renderer.h"
 #include "DXSampleHelper.h"
+#include "AssetManager.h"
 
 Renderer::DX12Renderer::DX12Renderer():
     IRenderer(),
@@ -167,6 +168,9 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
 
 void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_scene)
 {
+
+    assetlib::AssetManager::GetAssertManager();
+
     assert(p_scene && "Nullptr!");
     m_scene = p_scene;
     {

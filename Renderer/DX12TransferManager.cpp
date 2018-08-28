@@ -31,7 +31,7 @@ void Renderer::DX12TransferManager::InitHeaps()
     {
         D3D12_HEAP_DESC upload_desc = {};
         upload_desc.Alignment = 64 * 1024;
-        upload_desc.Flags = D3D12_HEAP_FLAG_NONE;
+        upload_desc.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
         upload_desc.Properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
         upload_desc.Properties.CreationNodeMask = 1;
         upload_desc.Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
@@ -111,6 +111,8 @@ void Renderer::DX12TransferManager::FlushResourceBarriers(void)
 {
     if (m_NumBarriersToFlush > 0)
     {
+
+        m_CommandList->Reset();
         m_CommandList->GetDX12CmdList()->ResourceBarrier(m_NumBarriersToFlush, m_ResourceBarrierBuffer);
         m_NumBarriersToFlush = 0;
     }
@@ -136,7 +138,7 @@ void Renderer::DX12TransferManager::UploadDataToVertexBuffer(TransferJob* p_job)
     m_UploadCommandList->Reset();
     m_UploadCommandList->GetDX12CmdList()->CopyBufferRegion(m_vertex_buffer.buffer->GetResource(), m_vertex_buffer.offset, m_upload_buffer.buffer->GetResource(), 0, p_job->data_size);
     m_UploadCommandList->Flush();
-    p_job->gpu_va_address = m_vertex_buffer.buffer->GetGpuVirtualAddress();
+    p_job->gpu_va_address = m_vertex_buffer.buffer->GetGpuVirtualAddress() + m_vertex_buffer.offset;
     m_vertex_buffer.offset += p_job->data_size;
     TransitionResource(*m_vertex_buffer.buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
@@ -186,6 +188,11 @@ Renderer::DX12TransferManager::~DX12TransferManager()
 {
     if (m_CommandList) {
         delete m_CommandList;
+        m_CommandList = nullptr;
+    }
+    if (m_UploadCommandList) 
+    {
+        delete m_UploadCommandList;
         m_CommandList = nullptr;
     }
 }

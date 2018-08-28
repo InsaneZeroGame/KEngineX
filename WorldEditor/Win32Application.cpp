@@ -30,13 +30,21 @@ static std::shared_ptr<gameplay::GamesScene> PrepareADummyScene()
     using namespace gameplay;
     auto dummy_scene = std::make_shared<gameplay::GamesScene>();
     auto dummy_material = std::make_shared<GameMeterial>();
-    GameMesh dummy_mesh;
-    dummy_mesh.m_vertices = {
+    GameMesh dummy_mesh1;
+    dummy_mesh1.m_vertices = {
         0.0f, 0.25f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
         0.25f, -0.25f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
         -0.25f, -0.25f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
+    };
+    GameMesh dummy_mesh2;
+    dummy_mesh2.m_vertices = {
+        0.25f + 0.0f, 0.25f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
+        0.25f + 0.25f, -0.25f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
+        0.25f + -0.25f, -0.25f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
     };;
-    dummy_material->m_meshes.push_back(dummy_mesh);
+    dummy_material->m_meshes.push_back(dummy_mesh1);
+    dummy_material->m_meshes.push_back(dummy_mesh2);
+
     dummy_scene->dummy_actor->AddMaterial(dummy_material);
     dummy_material.reset();
     return dummy_scene;

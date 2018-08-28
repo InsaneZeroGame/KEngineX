@@ -57,6 +57,8 @@ namespace Renderer
                 m_jobs.push(job);
         }
 
+        void PrepareToRender();
+
 
     private:
         DX12TransferManager();
@@ -120,6 +122,5 @@ namespace Renderer
         void DoOneJob(TransferJob*);
         void UploadDataToVertexBuffer(TransferJob* p_job);
         void TransitionResource(DX12GpuResource& Resource, D3D12_RESOURCE_STATES NewState, bool FlushImmediate, D3D12_COMMAND_LIST_TYPE);
-
     };//DX12UploadManager
 }//Renderer

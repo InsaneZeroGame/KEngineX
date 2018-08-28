@@ -107,6 +107,12 @@ void Renderer::DX12TransferManager::TransitionResource(DX12GpuResource& Resource
         FlushResourceBarriers();
 }
 
+void Renderer::DX12TransferManager::PrepareToRender()
+{
+    TransitionResource(*m_vertex_buffer.buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+
+}
+
 void Renderer::DX12TransferManager::FlushResourceBarriers(void)
 {
     if (m_NumBarriersToFlush > 0)
@@ -140,7 +146,6 @@ void Renderer::DX12TransferManager::UploadDataToVertexBuffer(TransferJob* p_job)
     m_UploadCommandList->Flush();
     p_job->gpu_va_address = m_vertex_buffer.buffer->GetGpuVirtualAddress() + m_vertex_buffer.offset;
     m_vertex_buffer.offset += p_job->data_size;
-    TransitionResource(*m_vertex_buffer.buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
 
 void Renderer::DX12TransferManager::BeginResourceTransition(DX12GpuResource& Resource, D3D12_RESOURCE_STATES NewState, bool FlushImmediate,D3D12_COMMAND_LIST_TYPE p_type)

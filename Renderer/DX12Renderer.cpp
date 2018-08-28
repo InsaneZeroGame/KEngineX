@@ -195,13 +195,24 @@ void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_s
 
                 DX12TransferManager::GetTransferManager().AddJob(&l_vertex_upload_job, true);
                 // Initialize the vertex buffer view.
-                mesh.m_mesh_desc.BufferLocation = l_vertex_upload_job.gpu_va_address;
-                mesh.m_mesh_desc.StrideInBytes = sizeof(Vertex);
-                mesh.m_mesh_desc.SizeInBytes = vertexBufferSize;
+                mesh.m_vertex_buffer_desc.BufferLocation = l_vertex_upload_job.gpu_va_address;
+                mesh.m_vertex_buffer_desc.StrideInBytes = sizeof(Vertex);
+                mesh.m_vertex_buffer_desc.SizeInBytes = vertexBufferSize;
+
+                TransferJob l_submesh_upload_job = {};
+                l_submesh_upload_job.data = mesh.m_indices.data();
+                l_submesh_upload_job.data_size = sizeof(uint32_t) * mesh.m_indices.size();
+                l_submesh_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
+
+                DX12TransferManager::GetTransferManager().AddJob(&l_submesh_upload_job, true);
+                // Initialize the Index buffer view.
+                mesh.m_index_buffer_desc.BufferLocation = l_submesh_upload_job.gpu_va_address;
+                mesh.m_index_buffer_desc.StrideInBytes = sizeof(uint32_t);
+                mesh.m_index_buffer_desc.SizeInBytes = l_submesh_upload_job.data_size;
             }
         }
 
-        
+        DX12TransferManager::GetTransferManager().PrepareToRender();
 
         
         //WaitForPreviousFrame();
@@ -255,13 +266,18 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         for (auto& mesh : material->m_meshes)
         {
             D3D12_VERTEX_BUFFER_VIEW l_mesh_desc = {};
-            l_mesh_desc.BufferLocation = mesh.m_mesh_desc.BufferLocation;
-            l_mesh_desc.SizeInBytes = mesh.m_mesh_desc.SizeInBytes;
-            l_mesh_desc.StrideInBytes = mesh.m_mesh_desc.StrideInBytes;
+            l_mesh_desc.BufferLocation = mesh.m_vertex_buffer_desc.BufferLocation;
+            l_mesh_desc.SizeInBytes = mesh.m_vertex_buffer_desc.SizeInBytes;
+            l_mesh_desc.StrideInBytes = mesh.m_vertex_buffer_desc.StrideInBytes;
 
 
+            D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
+            l_sub_mesh_desc.BufferLocation = mesh.m_index_buffer_desc.BufferLocation;
+            l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
+            l_sub_mesh_desc.SizeInBytes = mesh.m_index_buffer_desc.SizeInBytes;
+            current_render_cmd->IASetIndexBuffer(&l_sub_mesh_desc);
             current_render_cmd->IASetVertexBuffers(0, 1, &l_mesh_desc);
-            current_render_cmd->DrawInstanced(3, 1, 0, 0);
+            current_render_cmd->DrawIndexedInstanced(mesh.m_index_count, 1, 0, 0, 0);
         }
     }
     
@@ -280,7 +296,7 @@ void Renderer::DX12Renderer::InitCmdBuffers()
     }
 }
 
-void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t height, uint32_t width)
+void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t width, uint32_t height)
 {
     m_hwnd = hWnd;
     m_window_height = height;

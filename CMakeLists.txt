@@ -8,6 +8,7 @@ include_directories(GamePlay)
 include_directories(ThirdParty)
 
 include_directories(${PROJECT_SOURCE_DIR}/ThirdParty/fbxsdk/include)
+include_directories(${PROJECT_SOURCE_DIR}/ThirdParty/tinyobjloader/)
 link_directories(${PROJECT_SOURCE_DIR}/ThirdParty/libs)
 
 add_subdirectory(AssetLib)

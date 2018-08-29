@@ -1,6 +1,5 @@
 #include "DX12Renderer.h"
 #include "DXSampleHelper.h"
-#include "AssetManager.h"
 
 Renderer::DX12Renderer::DX12Renderer():
     IRenderer(),
@@ -168,9 +167,6 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
 
 void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_scene)
 {
-
-    assetlib::AssetManager::GetAssertManager();
-
     assert(p_scene && "Nullptr!");
     m_scene = p_scene;
     {
@@ -203,7 +199,7 @@ void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_s
                 l_submesh_upload_job.data = mesh.m_indices.data();
                 l_submesh_upload_job.data_size = sizeof(uint32_t) * mesh.m_indices.size();
                 l_submesh_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
-
+                
                 DX12TransferManager::GetTransferManager().AddJob(&l_submesh_upload_job, true);
                 // Initialize the Index buffer view.
                 mesh.m_index_buffer_desc.BufferLocation = l_submesh_upload_job.gpu_va_address;
@@ -277,6 +273,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
             l_sub_mesh_desc.SizeInBytes = mesh.m_index_buffer_desc.SizeInBytes;
             current_render_cmd->IASetIndexBuffer(&l_sub_mesh_desc);
             current_render_cmd->IASetVertexBuffers(0, 1, &l_mesh_desc);
+            //current_render_cmd->DrawInstanced(3, 1, 0, 0);
             current_render_cmd->DrawIndexedInstanced(mesh.m_index_count, 1, 0, 0, 0);
         }
     }

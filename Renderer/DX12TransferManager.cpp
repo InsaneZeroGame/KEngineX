@@ -109,6 +109,10 @@ void Renderer::DX12TransferManager::TransitionResource(DX12GpuResource& Resource
 
 void Renderer::DX12TransferManager::PrepareToRender()
 {
+
+    m_UploadCommandList->Reset();
+    m_UploadCommandList->GetDX12CmdList()->CopyBufferRegion(m_vertex_buffer.buffer->GetResource(),0, m_upload_buffer.buffer->GetResource(), 0, KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE);
+    m_UploadCommandList->Flush();
     TransitionResource(*m_vertex_buffer.buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 
 }
@@ -140,10 +144,7 @@ void Renderer::DX12TransferManager::DoOneJob(TransferJob* p_job)
 
 void Renderer::DX12TransferManager::UploadDataToVertexBuffer(TransferJob* p_job)
 {
-    memcpy(m_upload_buffer.data, p_job->data, p_job->data_size);
-    m_UploadCommandList->Reset();
-    m_UploadCommandList->GetDX12CmdList()->CopyBufferRegion(m_vertex_buffer.buffer->GetResource(), m_vertex_buffer.offset, m_upload_buffer.buffer->GetResource(), 0, p_job->data_size);
-    m_UploadCommandList->Flush();
+    memcpy(m_upload_buffer.data + m_vertex_buffer.offset, p_job->data, p_job->data_size);
     p_job->gpu_va_address = m_vertex_buffer.buffer->GetGpuVirtualAddress() + m_vertex_buffer.offset;
     m_vertex_buffer.offset += p_job->data_size;
 }

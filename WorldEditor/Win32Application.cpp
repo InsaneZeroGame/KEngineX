@@ -10,6 +10,8 @@
 //*********************************************************
 
 #include "Win32Application.h"
+#include "ObjLoaderHelper.h"
+
 
 HWND Win32Application::m_hwnd = nullptr;
 Renderer::IRenderer* Win32Application::m_dx12_renderer = nullptr;
@@ -90,7 +92,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
     //Init Renderer
     m_dx12_renderer = new Renderer::DX12Renderer();
     m_dx12_renderer->SetWindow(m_hwnd, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
-    m_dx12_renderer->LoadScene(PrepareADummyScene());
+    m_dx12_renderer->LoadScene(assetlib::LoadObj("cube.obj"));
     m_dx12_renderer->Init();
 
 	// Main sample loop.

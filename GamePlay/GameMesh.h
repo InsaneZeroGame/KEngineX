@@ -10,8 +10,9 @@ namespace gameplay
         GameMesh();
 
         GameMesh(std::vector<float> p_vertices,std::vector<uint32_t> p_indices);
-        
+
         ~GameMesh();
+
         struct MeshDescriptor
         {
             //To Support All graphics.

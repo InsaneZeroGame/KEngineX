@@ -181,7 +181,7 @@ void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_s
         {
             for (auto& mesh : material->m_meshes)
             {
-                const UINT vertexBufferSize = mesh.m_vertices.size() * sizeof(float);
+                const uint64_t vertexBufferSize = static_cast<uint64_t>(mesh.m_vertices.size()) * sizeof(float);
 
 
                 TransferJob l_vertex_upload_job = {};
@@ -193,7 +193,7 @@ void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_s
                 // Initialize the vertex buffer view.
                 mesh.m_vertex_buffer_desc.BufferLocation = l_vertex_upload_job.gpu_va_address;
                 mesh.m_vertex_buffer_desc.StrideInBytes = sizeof(Vertex);
-                mesh.m_vertex_buffer_desc.SizeInBytes = vertexBufferSize;
+                mesh.m_vertex_buffer_desc.SizeInBytes = static_cast<uint32_t>(vertexBufferSize);
 
                 TransferJob l_submesh_upload_job = {};
                 l_submesh_upload_job.data = mesh.m_indices.data();
@@ -204,14 +204,17 @@ void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_s
                 // Initialize the Index buffer view.
                 mesh.m_index_buffer_desc.BufferLocation = l_submesh_upload_job.gpu_va_address;
                 mesh.m_index_buffer_desc.StrideInBytes = sizeof(uint32_t);
-                mesh.m_index_buffer_desc.SizeInBytes = l_submesh_upload_job.data_size;
+                mesh.m_index_buffer_desc.SizeInBytes = static_cast<uint32_t>(l_submesh_upload_job.data_size);
+
+
+                //Release system memory used by vertices and indices.
+                //They are useless now since we don't readback or reuse it.
+                mesh.ReleaseMeshData();
+
             }
         }
-
         DX12TransferManager::GetTransferManager().PrepareToRender();
-
         
-        //WaitForPreviousFrame();
     }
 }
 
@@ -273,7 +276,6 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
             l_sub_mesh_desc.SizeInBytes = mesh.m_index_buffer_desc.SizeInBytes;
             current_render_cmd->IASetIndexBuffer(&l_sub_mesh_desc);
             current_render_cmd->IASetVertexBuffers(0, 1, &l_mesh_desc);
-            //current_render_cmd->DrawInstanced(3, 1, 0, 0);
             current_render_cmd->DrawIndexedInstanced(mesh.m_index_count, 1, 0, 0, 0);
         }
     }
@@ -330,4 +332,6 @@ void Renderer::DX12Renderer::Destory()
             cmd = nullptr;
         }
     }
+
+    m_scene.reset();
 }

@@ -11,6 +11,7 @@
 
 #include "Win32Application.h"
 #include "ObjLoaderHelper.h"
+#include "GameInput.h"
 
 
 HWND Win32Application::m_hwnd = nullptr;
@@ -88,6 +89,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 	// Initialize the sample. OnInit is defined in each child-implementation of DXSample.
 
 	ShowWindow(m_hwnd, nCmdShow);
+    GameInput::Initialize(m_hwnd);
 
     //Init Renderer
     m_dx12_renderer = new Renderer::DX12Renderer();
@@ -95,14 +97,20 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
     m_dx12_renderer->LoadScene(assetlib::LoadObj("cube.obj"));
     m_dx12_renderer->Init();
 
+    //Init GameInput
+    static int i = 0;
+
 	// Main sample loop.
 	MSG msg = {};
 	while (msg.message != WM_QUIT)
 	{
         m_dx12_renderer->Update();
+        GameInput::Update(i++);
+        GameInput::GetDurationPressed(GameInput::DigitalInput::kKey_e);
 		// Process any messages in the queue.
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{
+
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}

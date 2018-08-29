@@ -54,9 +54,6 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
                     tinyobj::index_t idx1 = shapes[s].mesh.indices[3 * f + 1];
                     tinyobj::index_t idx2 = shapes[s].mesh.indices[3 * f + 2];
 
-
-                    float v[3][3];
-
                     int f0 = idx0.vertex_index;
                     int f1 = idx1.vertex_index;
                     int f2 = idx2.vertex_index;
@@ -80,7 +77,6 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
                     vertex_buffer.push_back(1.0f);
                     vertex_buffer.push_back(1.0f);
                     vertex_buffer.push_back(1.0f);
-
                 }
                 ++i;
             }

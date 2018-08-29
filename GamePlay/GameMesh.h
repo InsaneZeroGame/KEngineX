@@ -30,6 +30,9 @@ namespace gameplay
         uint32_t m_index_count = 0;
 
         std::vector<float> m_vertices;
+
+        //It's called once data has been uploaded to GPU'S vram.
+        void ReleaseMeshData();
         
     };//class GameMesh
 

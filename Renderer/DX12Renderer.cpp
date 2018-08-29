@@ -115,11 +115,21 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
     // Create an empty root signature.
     {
         CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-        rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+        //rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+        
+        //Material Uniform
+        D3D12_ROOT_PARAMETER l_material_parameter = {};
+        l_material_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        l_material_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        l_material_parameter.Constants.Num32BitValues = 4;
+        l_material_parameter.Constants.RegisterSpace = 0;
+        l_material_parameter.Constants.ShaderRegister = 0;
 
+        rootSignatureDesc.Init(1, &l_material_parameter);
+        rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> signature;
         ComPtr<ID3DBlob> error;
-        ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error));
+        ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &error));
         ThrowIfFailed(m_device->GetDX12Device()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
     }
 
@@ -259,7 +269,8 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
     const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
     current_render_cmd->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+    float diffuse[4] = {1.0f,0.0f,1.0f,1.0f};
+    current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, diffuse, 0);
     for (auto& material : m_scene->dummy_actor->m_meterial)
     {
         for (auto& mesh : material->m_meshes)

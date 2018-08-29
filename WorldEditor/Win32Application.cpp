@@ -105,8 +105,8 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 	while (msg.message != WM_QUIT)
 	{
         m_dx12_renderer->Update();
-        GameInput::Update(i++);
-        GameInput::GetDurationPressed(GameInput::DigitalInput::kKey_e);
+        //GameInput::Update(i++);
+        //GameInput::GetDurationPressed(GameInput::DigitalInput::kKey_e);
 		// Process any messages in the queue.
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 		{

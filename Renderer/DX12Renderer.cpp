@@ -21,6 +21,7 @@ void Renderer::DX12Renderer::Init()
     auto& manager = DX12TransferManager::GetTransferManager();
     InitSwapChain();
     InitFences();
+    InitCameraUniform();
     InitGraphicsPipelines();
     InitCmdBuffers();
 }
@@ -120,15 +121,24 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         //Material Uniform (Constants)
         D3D12_ROOT_PARAMETER l_material_parameter = {};
         l_material_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        l_material_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        l_material_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
         l_material_parameter.Constants.Num32BitValues = 4;
         l_material_parameter.Constants.RegisterSpace = 0;
         l_material_parameter.Constants.ShaderRegister = 0;
 
         //Camera Uniform (Constant Buffer View)
+        D3D12_ROOT_PARAMETER l_camera_parameter = {};
+        l_camera_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        l_camera_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        l_camera_parameter.Descriptor.RegisterSpace = 0;
+        l_camera_parameter.Descriptor.ShaderRegister = 1;
+        
+        D3D12_ROOT_PARAMETER l_parameters[] = { 
+            l_material_parameter,
+            l_camera_parameter,};
 
 
-        rootSignatureDesc.Init(1, &l_material_parameter);
+        rootSignatureDesc.Init(2, l_parameters);
         rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> signature;
         ComPtr<ID3DBlob> error;
@@ -259,7 +269,12 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
     // Set necessary state.
     m_render_cmd[m_current_frameindex]->Reset();
     auto current_render_cmd = m_render_cmd[m_current_frameindex]->GetDX12CmdList();
+
     current_render_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
+    //Update Camera
+    memcpy(m_camera_uniform->data, &m_scene->m_main_camera.GetViewProjMatrix(), sizeof(float) * 16);
+    current_render_cmd->SetGraphicsRootConstantBufferView(1, m_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
+    
     current_render_cmd->RSSetViewports(1, &m_viewport);
     current_render_cmd->RSSetScissorRects(1, &m_scissorRect);
 
@@ -273,7 +288,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
     const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
     current_render_cmd->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    float diffuse[4] = {0.25,0.75f,0.55,1.0f};
+    float diffuse[4] = {0.25f,0.75f,0.55f,1.0f};
     current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, diffuse, 0);
     for (auto& material : m_scene->dummy_actor->m_meterial)
     {
@@ -308,6 +323,16 @@ void Renderer::DX12Renderer::InitCmdBuffers()
     {
         m_render_cmd[i] = new DX12RenderCommndBuffer(m_pipelineState.Get());
     }
+}
+
+void Renderer::DX12Renderer::InitCameraUniform()
+{
+    //Init A Uniform Buffer for MainCamera using triple-buffer shceme.
+    //Matrix : 4x4 = 16 floats
+    //MVP = Matrix * 3
+    //Triple Buffer = MVP * 3;
+    m_camera_uniform = std::unique_ptr<UniformBuffer>(new UniformBuffer(CAMERA_UNIFORM_SIZE * 3));
+    
 }
 
 void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t width, uint32_t height)

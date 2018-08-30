@@ -87,5 +87,17 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
 
 
     }
+
+
+    //Setup Camera
+    Vector3 eye = Vector3(3.0f); 
+    Vector3 at  = Vector3(0.0f);
+    Vector3 up  = Vector3(0.0f,1.0f,0.0f);
+
+    l_scene->m_main_camera.SetEyeAtUp(eye, at, up);
+    l_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f,600.0f/800.0f,0.1f,25.0);
+    l_scene->m_main_camera.Update();
+
+
     return l_scene;
 }

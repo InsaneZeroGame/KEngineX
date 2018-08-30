@@ -1,5 +1,5 @@
-file(GLOB DOT_H ./*.h)
-file(GLOB DOT_CPP ./*.cpp)
+file(GLOB DOT_H ./*.h ./Math/*.h ./Math/*.inl)
+file(GLOB DOT_CPP ./*.cpp ./Math/*.cpp)
 
 
 

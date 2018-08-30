@@ -3,6 +3,10 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <array>
+
+using Vec4f = std::array<float, 4>;
+
 
 namespace gameplay
 {
@@ -33,6 +37,6 @@ namespace gameplay
     protected:
         std::string m_name;
         std::vector<std::shared_ptr<SceneNode>> m_children;
-
+        Vec4f m_pos;
     };//class SceneNode
 }//namespace GamePlay

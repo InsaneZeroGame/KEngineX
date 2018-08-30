@@ -1,6 +1,7 @@
 #pragma once
 #include <INoCopy.h>
 #include "GameActor.h"
+#include "GameCamera.h"
 
 namespace gameplay
 {
@@ -11,6 +12,8 @@ namespace gameplay
         ~GamesScene();
 
         std::shared_ptr<GameActor>  dummy_actor;
+        
+        GameCamera m_main_camera;
 
     private:
 

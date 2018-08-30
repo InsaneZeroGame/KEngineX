@@ -8,6 +8,7 @@
 #include "DX12GpuDevice.h"
 #include "DX12ComandBuffer.h"
 #include "DX12TransferManager.h"
+#include <GameCamera.h>
 
 namespace Renderer {
     class DX12Renderer final: public IRenderer
@@ -40,16 +41,19 @@ namespace Renderer {
         Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature;
 
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
-
-        //Microsoft::WRL::ComPtr<ID3D12Resource> m_vertexBuffer;
         
         CD3DX12_VIEWPORT m_viewport;
 
         CD3DX12_RECT m_scissorRect;
 
-        //D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
-
         std::shared_ptr<gameplay::GamesScene> m_scene;
+
+        std::unique_ptr<UniformBuffer> m_camera_uniform;
+
+        enum {
+            CAMERA_UNIFORM_SIZE = 256 //192 byte per buffer(3 buffers),256 for device alignment
+        };
+
     private:
 
         void InitDevice();
@@ -65,6 +69,8 @@ namespace Renderer {
         void RecordGraphicsCmd();
 
         void InitCmdBuffers();
+
+        void InitCameraUniform();
 
     public:
         // Inherited via IModule

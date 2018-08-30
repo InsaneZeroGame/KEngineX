@@ -94,6 +94,11 @@ namespace Renderer
         DX12GpuDevice* m_device;
     };
 
+    inline D3D12_CPU_DESCRIPTOR_HANDLE DX12GpuBuffer::CreateConstantBufferView(uint32_t Offset, uint32_t Size) const
+    {
+        return D3D12_CPU_DESCRIPTOR_HANDLE();
+    }
+
     inline D3D12_VERTEX_BUFFER_VIEW DX12GpuBuffer::VertexBufferView(size_t Offset, uint32_t Size, uint32_t Stride) const
     {
         D3D12_VERTEX_BUFFER_VIEW VBView;

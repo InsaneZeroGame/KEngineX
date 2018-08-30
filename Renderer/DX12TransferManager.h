@@ -1,7 +1,8 @@
 #pragma once
 #include "DX12GpuDevice.h"
 #include <INoCopy.h>
-#include "DX12GpuBuffer.h"
+#include "DX12UniformBuffer.h"
+#include "DX12VertexBuffer.h"
 #include <EngineConfig.h>
 #include "DX12ComandBuffer.h"
 #include <queue>
@@ -48,7 +49,7 @@ namespace Renderer
             return &GetTransferManager();
         }
 
-        __forceinline void AddJob(TransferJob* job,bool flush_imediate = false)
+        __forceinline void AddTransferJob(TransferJob* job,bool flush_imediate = false)
         {
             if (flush_imediate) {
                 DoOneJob(job);
@@ -63,49 +64,8 @@ namespace Renderer
     private:
         DX12TransferManager();
         DX12GpuDevice* m_device;
-        struct VertexBuffer
-        {
-            DX12GpuBuffer* buffer;
-            Microsoft::WRL::ComPtr<ID3D12Heap> heap;
-            uint64_t offset = 0;
-
-            VertexBuffer():buffer(new DX12GpuBuffer())
-            {
-            
-            }
-
-            ~VertexBuffer() 
-            {
-                if (buffer) {
-                    delete  buffer;
-                    buffer = nullptr;
-                }
-            }
-
-        }m_vertex_buffer;
-
-        struct UploadBuffer
-        {
-            DX12GpuBuffer* buffer;
-            Microsoft::WRL::ComPtr<ID3D12Heap> heap;
-            uint8_t* data;
-            //uint64_t offset = 0;
-
-            UploadBuffer() :buffer(new DX12GpuBuffer())
-            {
-            }
-
-            ~UploadBuffer()
-            {
-                if (buffer)
-                {
-                    delete  buffer;
-                    buffer = nullptr;
-                }
-            }
-
-        }m_upload_buffer;
-
+        std::unique_ptr<VertexIndexBuffer> m_vertex_buffer;
+        std::unique_ptr<UniformBuffer> m_upload_buffer;
         D3D12_RESOURCE_BARRIER m_ResourceBarrierBuffer[16];
         UINT m_NumBarriersToFlush;
         DX12RenderCommndBuffer* m_CommandList;
@@ -113,7 +73,6 @@ namespace Renderer
 
         std::queue<TransferJob*> m_jobs;
     private:
-        void InitHeaps();
         void InitBuffers();
         void InitCmdBuffers();
         void BeginResourceTransition(DX12GpuResource& Resource, D3D12_RESOURCE_STATES NewState, bool FlushImmediate,D3D12_COMMAND_LIST_TYPE);

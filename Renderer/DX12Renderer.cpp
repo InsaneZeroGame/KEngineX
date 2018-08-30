@@ -115,15 +115,18 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
     // Create an empty root signature.
     {
         CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-        //rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
         
-        //Material Uniform
+        //Material Uniform (Constants)
         D3D12_ROOT_PARAMETER l_material_parameter = {};
         l_material_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
         l_material_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
         l_material_parameter.Constants.Num32BitValues = 4;
         l_material_parameter.Constants.RegisterSpace = 0;
         l_material_parameter.Constants.ShaderRegister = 0;
+
+        //Camera Uniform (Constant Buffer View)
+
 
         rootSignatureDesc.Init(1, &l_material_parameter);
         rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
@@ -152,8 +155,9 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
         };
+
 
         // Describe and create the graphics pipeline state object (PSO).
         D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
@@ -199,7 +203,7 @@ void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_s
                 l_vertex_upload_job.data_size = vertexBufferSize;
                 l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
 
-                DX12TransferManager::GetTransferManager().AddJob(&l_vertex_upload_job, true);
+                DX12TransferManager::GetTransferManager().AddTransferJob(&l_vertex_upload_job, true);
                 // Initialize the vertex buffer view.
                 mesh.m_vertex_buffer_desc.BufferLocation = l_vertex_upload_job.gpu_va_address;
                 mesh.m_vertex_buffer_desc.StrideInBytes = sizeof(Vertex);
@@ -210,7 +214,7 @@ void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_s
                 l_submesh_upload_job.data_size = sizeof(uint32_t) * mesh.m_indices.size();
                 l_submesh_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
                 
-                DX12TransferManager::GetTransferManager().AddJob(&l_submesh_upload_job, true);
+                DX12TransferManager::GetTransferManager().AddTransferJob(&l_submesh_upload_job, true);
                 // Initialize the Index buffer view.
                 mesh.m_index_buffer_desc.BufferLocation = l_submesh_upload_job.gpu_va_address;
                 mesh.m_index_buffer_desc.StrideInBytes = sizeof(uint32_t);
@@ -269,7 +273,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
     const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
     current_render_cmd->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
     current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    float diffuse[4] = {1.0f,0.0f,1.0f,1.0f};
+    float diffuse[4] = {0.25,0.75f,0.55,1.0f};
     current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, diffuse, 0);
     for (auto& material : m_scene->dummy_actor->m_meterial)
     {

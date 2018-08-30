@@ -34,3 +34,5 @@
 Build/*
 Assets/*
 ThirdParty/libs/*
+Renderer/DXSampleHelper.h
+Framework/EngineConfig.h

@@ -219,17 +219,19 @@ void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_s
                 mesh.m_vertex_buffer_desc.StrideInBytes = sizeof(Vertex);
                 mesh.m_vertex_buffer_desc.SizeInBytes = static_cast<uint32_t>(vertexBufferSize);
 
-                TransferJob l_submesh_upload_job = {};
-                l_submesh_upload_job.data = mesh.m_indices.data();
-                l_submesh_upload_job.data_size = sizeof(uint32_t) * mesh.m_indices.size();
-                l_submesh_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
-                
-                DX12TransferManager::GetTransferManager().AddTransferJob(&l_submesh_upload_job, true);
-                // Initialize the Index buffer view.
-                mesh.m_index_buffer_desc.BufferLocation = l_submesh_upload_job.gpu_va_address;
-                mesh.m_index_buffer_desc.StrideInBytes = sizeof(uint32_t);
-                mesh.m_index_buffer_desc.SizeInBytes = static_cast<uint32_t>(l_submesh_upload_job.data_size);
+                for (auto & submesh : mesh.m_sub_meshes)
+                {
+                    TransferJob l_submesh_upload_job = {};
+                    l_submesh_upload_job.data = submesh.m_indices.data();
+                    l_submesh_upload_job.data_size = sizeof(uint32_t) * submesh.m_indices.size();
+                    l_submesh_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
 
+                    DX12TransferManager::GetTransferManager().AddTransferJob(&l_submesh_upload_job, true);
+                    // Initialize the Index buffer view.
+                    submesh.m_index_buffer_desc.BufferLocation = l_submesh_upload_job.gpu_va_address;
+                    submesh.m_index_buffer_desc.StrideInBytes = sizeof(uint32_t);
+                    submesh.m_index_buffer_desc.SizeInBytes = static_cast<uint32_t>(l_submesh_upload_job.data_size);
+                }
 
                 //Release system memory used by vertices and indices.
                 //They are useless now since we don't readback or reuse it.
@@ -299,14 +301,18 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
             l_mesh_desc.SizeInBytes = mesh.m_vertex_buffer_desc.SizeInBytes;
             l_mesh_desc.StrideInBytes = mesh.m_vertex_buffer_desc.StrideInBytes;
 
-
-            D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
-            l_sub_mesh_desc.BufferLocation = mesh.m_index_buffer_desc.BufferLocation;
-            l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
-            l_sub_mesh_desc.SizeInBytes = mesh.m_index_buffer_desc.SizeInBytes;
-            current_render_cmd->IASetIndexBuffer(&l_sub_mesh_desc);
             current_render_cmd->IASetVertexBuffers(0, 1, &l_mesh_desc);
-            current_render_cmd->DrawIndexedInstanced(mesh.m_index_count, 1, 0, 0, 0);
+
+
+            for (auto & submesh : mesh.m_sub_meshes)
+            {
+                D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
+                l_sub_mesh_desc.BufferLocation = submesh.m_index_buffer_desc.BufferLocation;
+                l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
+                l_sub_mesh_desc.SizeInBytes = submesh.m_index_buffer_desc.SizeInBytes;
+                current_render_cmd->IASetIndexBuffer(&l_sub_mesh_desc);
+                current_render_cmd->DrawIndexedInstanced(submesh.m_index_count, 1, 0, 0, 0);
+            }
         }
     }
     

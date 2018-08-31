@@ -11,8 +11,6 @@ namespace Renderer
             DX12GpuBuffer()
         {
             m_BufferSize = p_size;
-
-
             //Init upload buffer heap.
             {
                 D3D12_HEAP_DESC upload_desc = {};
@@ -36,8 +34,6 @@ namespace Renderer
                 //Keeps it mapped.
                 GetResource()->Map(0, &l_range, reinterpret_cast<void**>(&data));
             }
-
-
         }
 
         ~UniformBuffer()

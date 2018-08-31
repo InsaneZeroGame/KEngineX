@@ -22,35 +22,35 @@ Renderer::IRenderer* Win32Application::m_dx12_renderer = nullptr;
 
 static std::shared_ptr<gameplay::GamesScene> PrepareADummyScene() 
 {
-
-    std::vector<float> triangleVertices =
-    {
-       0.0f, 0.25f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
-       0.25f, -0.25f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
-       -0.25f, -0.25f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
-    };
-
-    using namespace gameplay;
-    auto dummy_scene = std::make_shared<gameplay::GamesScene>();
-    auto dummy_material = std::make_shared<GameMeterial>();
-    GameMesh dummy_mesh1({
-        0.0f, 1.0f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
-        1.0f, -1.0f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
-        -1.0f, -1.0f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
-        }, { 0,1,2 });
-    GameMesh dummy_mesh2({
-        0.25f + 0.0f, 0.25f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
-        0.25f + 0.25f, -0.25f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
-        0.25f + -0.25f, -0.25f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
-        }, { 0,1,2 });
-    
-
-    dummy_material->m_meshes.push_back(dummy_mesh1);
-    dummy_material->m_meshes.push_back(dummy_mesh2);
-
-    dummy_scene->dummy_actor->AddMaterial(dummy_material);
-    dummy_material.reset();
-    return dummy_scene;
+    assert(0);
+    //std::vector<float> triangleVertices =
+    //{
+    //   0.0f, 0.25f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
+    //   0.25f, -0.25f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
+    //   -0.25f, -0.25f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
+    //};
+    //
+    //using namespace gameplay;
+    //auto dummy_scene = std::make_shared<gameplay::GamesScene>();
+    //auto dummy_material = std::make_shared<GameMeterial>();
+    //GameMesh dummy_mesh1({
+    //    0.0f, 1.0f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
+    //    1.0f, -1.0f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
+    //    -1.0f, -1.0f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
+    //    }, { 0,1,2 });
+    //GameMesh dummy_mesh2({
+    //    0.25f + 0.0f, 0.25f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
+    //    0.25f + 0.25f, -0.25f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
+    //    0.25f + -0.25f, -0.25f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
+    //    }, { 0,1,2 });
+    //
+    //
+    //dummy_material->m_meshes.push_back(dummy_mesh1);
+    //dummy_material->m_meshes.push_back(dummy_mesh2);
+    //
+    //dummy_scene->dummy_actor->AddMaterial(dummy_material);
+    //dummy_material.reset();
+    //return dummy_scene;
 }
 
 

@@ -45,9 +45,11 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
         {
             //Map Shapes to Engine GameMesh
             std::vector<float> vertex_buffer;
-            std::vector<uint32_t> index_buffer;
+            GameMesh l_mesh;
             for (size_t s = 0; s < shapes.size(); s++)
             {
+                //Pershape mapped to GameSubMesh
+                std::vector<uint32_t> index_buffer;
                 for (size_t f = 0; f < shapes[s].mesh.indices.size() / 3; f++)
                 {
                     tinyobj::index_t idx0 = shapes[s].mesh.indices[3 * f + 0];
@@ -66,6 +68,7 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
                     assert(f1 >= 0);
                     assert(f2 >= 0);
                 }
+                l_mesh.m_sub_meshes.push_back(GameSubMesh(index_buffer));
             }
             uint32_t i = 0;
             for (auto& vertex : attrib.vertices)
@@ -80,12 +83,11 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
                 }
                 ++i;
             }
-            l_material->m_meshes.push_back(GameMesh(vertex_buffer, index_buffer));
+            l_mesh.m_vertices = vertex_buffer;
+            l_material->m_meshes.push_back(l_mesh);
 
         }
         l_scene->dummy_actor->AddMaterial(l_material);
-
-
     }
 
 

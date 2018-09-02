@@ -20,6 +20,7 @@ void Renderer::DX12Renderer::Init()
     InitDevice();
     auto& manager = DX12TransferManager::GetTransferManager();
     InitSwapChain();
+    InitDepthBuffer();
     InitFences();
     InitCameraUniform();
     InitGraphicsPipelines();
@@ -162,7 +163,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shaders.hlsl").c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
 
         // Define the vertex input layout.
-        D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
+        std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs =
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
             { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
@@ -171,18 +172,21 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
 
         // Describe and create the graphics pipeline state object (PSO).
         D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-        psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+        psoDesc.InputLayout = { inputElementDescs.data(), static_cast<uint32_t>(inputElementDescs.size()) };
         psoDesc.pRootSignature = m_rootSignature.Get();
         psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
         psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
         psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
         psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-        psoDesc.DepthStencilState.DepthEnable = FALSE;
+        psoDesc.DepthStencilState.DepthEnable = TRUE;
+        psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+        psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
         psoDesc.DepthStencilState.StencilEnable = FALSE;
         psoDesc.SampleMask = UINT_MAX;
         psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
         psoDesc.NumRenderTargets = 1;
         psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+        psoDesc.DSVFormat = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
         psoDesc.SampleDesc.Count = 1;
         ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
     }
@@ -282,16 +286,24 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
 
     // Indicate that the back buffer will be used as a render target.
     current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+    //ToDo::Fix the state transition.
+    static bool is_first_time = true;
+    if (is_first_time)
+    {
+        current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depth_buffer->GetResource(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
+        is_first_time = false;
+    }
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_current_frameindex, m_rtvDescriptorSize);
-    current_render_cmd->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
 
     // Record commands.
     const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
     current_render_cmd->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+    current_render_cmd->ClearDepthStencilView(m_depth_buffer->GetDSV(), D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
     current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    float diffuse[4] = {0.25f,0.75f,0.55f,1.0f};
-    current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, diffuse, 0);
+    current_render_cmd->OMSetRenderTargets(1, &rtvHandle, FALSE, &m_depth_buffer->GetDSV());
+
+    //float diffuse[4] = {0.25f,0.75f,0.55f,1.0f};
     for (auto& material : m_scene->dummy_actor->m_meterial)
     {
         for (auto& mesh : material->m_meshes)
@@ -306,6 +318,8 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
 
             for (auto & submesh : mesh.m_sub_meshes)
             {
+                current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, submesh.m_diffuse.data(), 0);
+
                 D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
                 l_sub_mesh_desc.BufferLocation = submesh.m_index_buffer_desc.BufferLocation;
                 l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
@@ -341,6 +355,12 @@ void Renderer::DX12Renderer::InitCameraUniform()
     
 }
 
+void Renderer::DX12Renderer::InitDepthBuffer()
+{
+    m_depth_buffer = std::unique_ptr<DX12DepthBuffer>(new DX12DepthBuffer());
+    m_depth_buffer->Create(L"DepthBuffer", DEPTH_BUFFER_WIDTH, DEPTH_BUFFER_HEIGHT, DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT);
+}
+
 void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t width, uint32_t height)
 {
     m_hwnd = hWnd;
@@ -360,8 +380,8 @@ void Renderer::DX12Renderer::Update()
     RecordGraphicsCmd();
 
     // Execute the command list.
-    ID3D12CommandList* ppCommandLists[] = { m_render_cmd[m_current_frameindex]->GetDX12CmdList() };
-    m_device->GetCmdQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+    std::vector<ID3D12CommandList*> ppCommandLists = { m_render_cmd[m_current_frameindex]->GetDX12CmdList() };
+    m_device->GetCmdQueue()->ExecuteCommandLists(static_cast<uint32_t>(ppCommandLists.size()), ppCommandLists.data());
 
     // Present the frame.
     ThrowIfFailed(m_swapChain->Present(1, 0));

@@ -14,6 +14,9 @@
 #pragma once
 #include "d3dx12.h"
 #include <wrl.h>
+#include <stdint.h>
+#include <string>
+#include "DX12GpuDevice.h"
 
 namespace Renderer
 {

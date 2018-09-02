@@ -3,12 +3,14 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers.
 #endif
+#include "DX12DepthBuffer.h"
 #include <windows.h>
 #include <array>
 #include "DX12GpuDevice.h"
 #include "DX12ComandBuffer.h"
 #include "DX12TransferManager.h"
 #include <GameCamera.h>
+
 
 namespace Renderer {
     class DX12Renderer final: public IRenderer
@@ -50,8 +52,16 @@ namespace Renderer {
 
         std::unique_ptr<UniformBuffer> m_camera_uniform;
 
+        std::unique_ptr<DX12DepthBuffer> m_depth_buffer;
+
         enum {
             CAMERA_UNIFORM_SIZE = 256 //192 byte per buffer(3 buffers),256 for device alignment
+        };
+        enum {
+            DEPTH_BUFFER_WIDTH = 800
+        };
+        enum {
+            DEPTH_BUFFER_HEIGHT = 600
         };
 
     private:
@@ -71,6 +81,8 @@ namespace Renderer {
         void InitCmdBuffers();
 
         void InitCameraUniform();
+
+        void InitDepthBuffer();
 
     public:
         // Inherited via IModule

@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-
+#include <array>
 
 namespace gameplay
 {
@@ -21,6 +21,8 @@ namespace gameplay
         } m_index_buffer_desc;
 
         std::vector<uint32_t> m_indices;
+
+        std::array<float, 4> m_diffuse;
 
         uint32_t m_index_count = 0;
 

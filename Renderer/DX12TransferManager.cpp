@@ -81,6 +81,7 @@ void Renderer::DX12TransferManager::FlushResourceBarriers(void)
 
         m_CommandList->Reset();
         m_CommandList->GetDX12CmdList()->ResourceBarrier(m_NumBarriersToFlush, m_ResourceBarrierBuffer);
+        m_CommandList->Flush();
         m_NumBarriersToFlush = 0;
     }
 }

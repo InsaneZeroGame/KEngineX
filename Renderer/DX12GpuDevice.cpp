@@ -54,6 +54,10 @@ Renderer::DX12GpuDevice::DX12GpuDevice():
     queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
     ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
+
+
+    //Allocate Descriptor Heaps
+    AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 }
 
 void Renderer::DX12GpuDevice::GetHardwareAdapter(IDXGIFactory2* pFactory, IDXGIAdapter1** ppAdapter)
@@ -84,6 +88,24 @@ void Renderer::DX12GpuDevice::GetHardwareAdapter(IDXGIFactory2* pFactory, IDXGIA
     *ppAdapter = adapter.Detach();
 }
 
+
+void Renderer::DX12GpuDevice::AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE p_type)
+{
+    D3D12_DESCRIPTOR_HEAP_DESC Desc;
+    Desc.Type = p_type;
+    Desc.NumDescriptors = DESCRIPTOR_SUM_NUM;
+    Desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    Desc.NodeMask = 1;
+
+    ASSERT_SUCCEEDED(m_device->CreateDescriptorHeap(&Desc, IID_PPV_ARGS(&m_desc_heaps[p_type])));
+}
+
+D3D12_CPU_DESCRIPTOR_HANDLE Renderer::DX12GpuDevice::GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type,uint32_t index)
+{
+    D3D12_CPU_DESCRIPTOR_HANDLE l_handle = {};
+    l_handle.ptr = m_desc_heaps[p_type]->GetCPUDescriptorHandleForHeapStart().ptr + m_device->GetDescriptorHandleIncrementSize(p_type) * index;
+    return l_handle;
+}
 
 Renderer::DX12GpuDevice::~DX12GpuDevice()
 {

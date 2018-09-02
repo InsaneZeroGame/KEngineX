@@ -33,11 +33,11 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
             assert(0);
         }
 
-        printf("# of vertices  = %d\n", (int)(attrib.vertices.size()) / 3);
-        printf("# of normals   = %d\n", (int)(attrib.normals.size()) / 3);
-        printf("# of texcoords = %d\n", (int)(attrib.texcoords.size()) / 2);
-        printf("# of materials = %d\n", (int)materials.size());
-        printf("# of shapes    = %d\n", (int)shapes.size());
+        //printf("# of vertices  = %d\n", (int)(attrib.vertices.size()) / 3);
+        //printf("# of normals   = %d\n", (int)(attrib.normals.size()) / 3);
+        //printf("# of texcoords = %d\n", (int)(attrib.texcoords.size()) / 2);
+        //printf("# of materials = %d\n", (int)materials.size());
+        //printf("# of shapes    = %d\n", (int)shapes.size());
 
         auto l_material = std::shared_ptr< GameMeterial>(new GameMeterial());
 
@@ -68,7 +68,15 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
                     assert(f1 >= 0);
                     assert(f2 >= 0);
                 }
-                l_mesh.m_sub_meshes.push_back(GameSubMesh(index_buffer));
+                GameSubMesh l_sub_mesh(index_buffer);
+                //TinyObjLoader support a per face material,we only use face 0 material.
+                auto material_id = shapes[s].mesh.material_ids[0];
+                l_sub_mesh.m_diffuse[0] = materials[material_id].diffuse[0];
+                l_sub_mesh.m_diffuse[1] = materials[material_id].diffuse[1];
+                l_sub_mesh.m_diffuse[2] = materials[material_id].diffuse[2];
+                l_sub_mesh.m_diffuse[3] = 1.0f;
+
+                l_mesh.m_sub_meshes.push_back(l_sub_mesh);
             }
             uint32_t i = 0;
             for (auto& vertex : attrib.vertices)
@@ -92,12 +100,12 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
 
 
     //Setup Camera
-    Vector3 eye = Vector3(3.0f); 
-    Vector3 at  = Vector3(0.0f);
+    Vector3 eye = Vector3(10.0f, 10.0f, 10.0f);
+    Vector3 at  = Vector3(0.0f, 0.0f, 0.0f);
     Vector3 up  = Vector3(0.0f,1.0f,0.0f);
 
     l_scene->m_main_camera.SetEyeAtUp(eye, at, up);
-    l_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f,600.0f/800.0f,0.1f,25.0);
+    l_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f,600.0f/800.0f,0.1f,25.0F);
     l_scene->m_main_camera.Update();
 
 

@@ -94,7 +94,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
     //Init Renderer
     m_dx12_renderer = new Renderer::DX12Renderer();
     m_dx12_renderer->SetWindow(m_hwnd, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
-    m_dx12_renderer->LoadScene(assetlib::LoadObj("cube.obj"));
+    m_dx12_renderer->LoadScene(assetlib::LoadObj("simple_scene.obj"));
     m_dx12_renderer->Init();
 
     //Init GameInput

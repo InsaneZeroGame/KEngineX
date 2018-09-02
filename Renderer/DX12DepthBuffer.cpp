@@ -21,7 +21,7 @@ namespace Renderer {
         D3D12_RESOURCE_DESC ResourceDesc = DescribeTex2D(Width, Height, 1, 1, Format, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
         D3D12_CLEAR_VALUE ClearValue = {};
-        ClearValue.DepthStencil.Depth = 1.0f;
+        ClearValue.DepthStencil.Depth = 0.0f;
         ClearValue.DepthStencil.Stencil = 0;
         ClearValue.Format = Format;
         CreateTextureResource(Name, ResourceDesc, ClearValue, VidMemPtr);

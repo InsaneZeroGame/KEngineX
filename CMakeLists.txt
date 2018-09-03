@@ -6,6 +6,7 @@ include_directories(Framework)
 include_directories(Renderer)
 include_directories(GamePlay)
 include_directories(ThirdParty)
+include_directories(AssetLib)
 
 include_directories(${PROJECT_SOURCE_DIR}/ThirdParty/fbxsdk/include)
 include_directories(${PROJECT_SOURCE_DIR}/ThirdParty/tinyobjloader/)

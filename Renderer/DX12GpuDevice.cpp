@@ -58,6 +58,8 @@ Renderer::DX12GpuDevice::DX12GpuDevice():
 
     //Allocate Descriptor Heaps
     AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+    m_device->CreateFence(0, D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_cmd_flush_fence));
 }
 
 void Renderer::DX12GpuDevice::GetHardwareAdapter(IDXGIFactory2* pFactory, IDXGIAdapter1** ppAdapter)
@@ -98,6 +100,23 @@ void Renderer::DX12GpuDevice::AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE 
     Desc.NodeMask = 1;
 
     ASSERT_SUCCEEDED(m_device->CreateDescriptorHeap(&Desc, IID_PPV_ARGS(&m_desc_heaps[p_type])));
+}
+
+void Renderer::DX12GpuDevice::WaitForGPU()
+{
+    if (m_cmd_flush_fence->GetCompletedValue() < m_cmd_flush_fence_value)
+    {
+        m_cmd_flush_fence->SetEventOnCompletion(m_cmd_flush_fence_value, m_cmd_flush_wait_event);
+        WaitForSingleObjectEx(m_cmd_flush_wait_event, FENCE_WAIT_TIME_INFINITY, false);
+    }
+    m_cmd_flush_fence_value++;
+}
+
+void Renderer::DX12GpuDevice::FlushCmd(ID3D12CommandList** pp_cmd, uint32_t count)
+{
+    m_commandQueue->ExecuteCommandLists(count, pp_cmd);
+    m_commandQueue->Signal(m_cmd_flush_fence.Get(), m_cmd_flush_fence_value);
+    WaitForGPU();
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer::DX12GpuDevice::GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type,uint32_t index)

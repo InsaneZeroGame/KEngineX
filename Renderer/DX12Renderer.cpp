@@ -23,6 +23,7 @@ void Renderer::DX12Renderer::Init()
     InitDepthBuffer();
     InitFences();
     InitCameraUniform();
+    InitRootSignature();
     InitGraphicsPipelines();
     InitCmdBuffers();
 }
@@ -114,38 +115,7 @@ void Renderer::DX12Renderer::InitFences()
 
 void Renderer::DX12Renderer::InitGraphicsPipelines()
 {
-    // Create an empty root signature.
-    {
-        CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
-
-        
-        //Material Uniform (Constants)
-        D3D12_ROOT_PARAMETER l_material_parameter = {};
-        l_material_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-        l_material_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-        l_material_parameter.Constants.Num32BitValues = 4;
-        l_material_parameter.Constants.RegisterSpace = 0;
-        l_material_parameter.Constants.ShaderRegister = 0;
-
-        //Camera Uniform (Constant Buffer View)
-        D3D12_ROOT_PARAMETER l_camera_parameter = {};
-        l_camera_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-        l_camera_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
-        l_camera_parameter.Descriptor.RegisterSpace = 0;
-        l_camera_parameter.Descriptor.ShaderRegister = 1;
-        
-        D3D12_ROOT_PARAMETER l_parameters[] = { 
-            l_material_parameter,
-            l_camera_parameter,};
-
-
-        rootSignatureDesc.Init(2, l_parameters);
-        rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
-        ComPtr<ID3DBlob> signature;
-        ComPtr<ID3DBlob> error;
-        ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &error));
-        ThrowIfFailed(m_device->GetDX12Device()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
-    }
+    
 
     // Create the pipeline state, which includes compiling and loading shaders.
     {
@@ -193,60 +163,6 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
 
 }
 
-void Renderer::DX12Renderer::LoadScene(std::shared_ptr<gameplay::GamesScene> p_scene)
-{
-    assert(p_scene && "Nullptr!");
-    m_scene = p_scene;
-    {
-        struct Vertex
-        {
-            float position[3];
-            float color[4];
-        };
-        // Define the geometry for a triangle.
-
-        for (auto& material : m_scene->dummy_actor->m_meterial)
-        {
-            for (auto& mesh : material->m_meshes)
-            {
-                const uint64_t vertexBufferSize = static_cast<uint64_t>(mesh.m_vertices.size()) * sizeof(float);
-
-
-                TransferJob l_vertex_upload_job = {};
-                l_vertex_upload_job.data = mesh.m_vertices.data();
-                l_vertex_upload_job.data_size = vertexBufferSize;
-                l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
-
-                DX12TransferManager::GetTransferManager().AddTransferJob(&l_vertex_upload_job, true);
-                // Initialize the vertex buffer view.
-                mesh.m_vertex_buffer_desc.BufferLocation = l_vertex_upload_job.gpu_va_address;
-                mesh.m_vertex_buffer_desc.StrideInBytes = sizeof(Vertex);
-                mesh.m_vertex_buffer_desc.SizeInBytes = static_cast<uint32_t>(vertexBufferSize);
-
-                for (auto & submesh : mesh.m_sub_meshes)
-                {
-                    TransferJob l_submesh_upload_job = {};
-                    l_submesh_upload_job.data = submesh.m_indices.data();
-                    l_submesh_upload_job.data_size = sizeof(uint32_t) * submesh.m_indices.size();
-                    l_submesh_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
-
-                    DX12TransferManager::GetTransferManager().AddTransferJob(&l_submesh_upload_job, true);
-                    // Initialize the Index buffer view.
-                    submesh.m_index_buffer_desc.BufferLocation = l_submesh_upload_job.gpu_va_address;
-                    submesh.m_index_buffer_desc.StrideInBytes = sizeof(uint32_t);
-                    submesh.m_index_buffer_desc.SizeInBytes = static_cast<uint32_t>(l_submesh_upload_job.data_size);
-                }
-
-                //Release system memory used by vertices and indices.
-                //They are useless now since we don't readback or reuse it.
-                mesh.ReleaseMeshData();
-
-            }
-        }
-        DX12TransferManager::GetTransferManager().PrepareToRender();
-        
-    }
-}
 
 void Renderer::DX12Renderer::WaitForPreviousFrame()
 {
@@ -286,13 +202,6 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
 
     // Indicate that the back buffer will be used as a render target.
     current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-    //ToDo::Fix the state transition.
-    static bool is_first_time = true;
-    if (is_first_time)
-    {
-        current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_depth_buffer->GetResource(), D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
-        is_first_time = false;
-    }
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_current_frameindex, m_rtvDescriptorSize);
 
@@ -302,35 +211,8 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
     current_render_cmd->ClearDepthStencilView(m_depth_buffer->GetDSV(), D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
     current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     current_render_cmd->OMSetRenderTargets(1, &rtvHandle, FALSE, &m_depth_buffer->GetDSV());
-
-    //float diffuse[4] = {0.25f,0.75f,0.55f,1.0f};
-    for (auto& material : m_scene->dummy_actor->m_meterial)
-    {
-        for (auto& mesh : material->m_meshes)
-        {
-            D3D12_VERTEX_BUFFER_VIEW l_mesh_desc = {};
-            l_mesh_desc.BufferLocation = mesh.m_vertex_buffer_desc.BufferLocation;
-            l_mesh_desc.SizeInBytes = mesh.m_vertex_buffer_desc.SizeInBytes;
-            l_mesh_desc.StrideInBytes = mesh.m_vertex_buffer_desc.StrideInBytes;
-
-            current_render_cmd->IASetVertexBuffers(0, 1, &l_mesh_desc);
-
-
-            for (auto & submesh : mesh.m_sub_meshes)
-            {
-                current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, submesh.m_diffuse.data(), 0);
-
-                D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
-                l_sub_mesh_desc.BufferLocation = submesh.m_index_buffer_desc.BufferLocation;
-                l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
-                l_sub_mesh_desc.SizeInBytes = submesh.m_index_buffer_desc.SizeInBytes;
-                current_render_cmd->IASetIndexBuffer(&l_sub_mesh_desc);
-                current_render_cmd->DrawIndexedInstanced(submesh.m_index_count, 1, 0, 0, 0);
-            }
-        }
-    }
-    
-
+    //Render Scene
+    RenderScene(current_render_cmd);
     // Indicate that the back buffer will now be used to present.
     current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
@@ -359,6 +241,73 @@ void Renderer::DX12Renderer::InitDepthBuffer()
 {
     m_depth_buffer = std::unique_ptr<DX12DepthBuffer>(new DX12DepthBuffer());
     m_depth_buffer->Create(L"DepthBuffer", DEPTH_BUFFER_WIDTH, DEPTH_BUFFER_HEIGHT, DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT);
+    DX12TransferManager::GetTransferManager().TransitionResource(*m_depth_buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+}
+
+void Renderer::DX12Renderer::InitRootSignature()
+{
+    // Create an empty root signature.
+    {
+        CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
+
+
+        //Material Uniform (Constants)
+        D3D12_ROOT_PARAMETER l_material_parameter = {};
+        l_material_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        l_material_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        l_material_parameter.Constants.Num32BitValues = 4;
+        l_material_parameter.Constants.RegisterSpace = 0;
+        l_material_parameter.Constants.ShaderRegister = 0;
+
+        //Camera Uniform (Constant Buffer View)
+        D3D12_ROOT_PARAMETER l_camera_parameter = {};
+        l_camera_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+        l_camera_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        l_camera_parameter.Descriptor.RegisterSpace = 0;
+        l_camera_parameter.Descriptor.ShaderRegister = 1;
+
+        D3D12_ROOT_PARAMETER l_parameters[] = {
+            l_material_parameter,
+            l_camera_parameter, };
+
+
+        rootSignatureDesc.Init(2, l_parameters);
+        rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+        ComPtr<ID3DBlob> signature;
+        ComPtr<ID3DBlob> error;
+        ThrowIfFailed(D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &error));
+        ThrowIfFailed(m_device->GetDX12Device()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
+    }
+}
+
+void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_render_cmd)
+{
+    //float diffuse[4] = {0.25f,0.75f,0.55f,1.0f};
+    for (auto& material : m_scene->dummy_actor->m_meterial)
+    {
+        for (auto& mesh : material->m_meshes)
+        {
+            D3D12_VERTEX_BUFFER_VIEW l_mesh_desc = {};
+            l_mesh_desc.BufferLocation = mesh.m_vertex_buffer_desc.BufferLocation;
+            l_mesh_desc.SizeInBytes = mesh.m_vertex_buffer_desc.SizeInBytes;
+            l_mesh_desc.StrideInBytes = mesh.m_vertex_buffer_desc.StrideInBytes;
+
+            current_render_cmd->IASetVertexBuffers(0, 1, &l_mesh_desc);
+
+
+            for (auto & submesh : mesh.m_sub_meshes)
+            {
+                current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, submesh.m_diffuse.data(), 0);
+
+                D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
+                l_sub_mesh_desc.BufferLocation = submesh.m_index_buffer_desc.BufferLocation;
+                l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
+                l_sub_mesh_desc.SizeInBytes = submesh.m_index_buffer_desc.SizeInBytes;
+                current_render_cmd->IASetIndexBuffer(&l_sub_mesh_desc);
+                current_render_cmd->DrawIndexedInstanced(submesh.m_index_count, 1, 0, 0, 0);
+            }
+        }
+    }
 }
 
 void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t width, uint32_t height)
@@ -370,7 +319,17 @@ void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t width, uint32_t heigh
     m_viewport.Height = static_cast<float>(height);
     m_scissorRect.right = width;
     m_scissorRect.bottom = height;
-};
+}
+void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScene> p_scene)
+{
+    if (m_scene)
+    {
+        //Release Previouse scene.
+        m_scene.reset();
+    }
+    m_scene = p_scene;
+}
+;
 
 
 

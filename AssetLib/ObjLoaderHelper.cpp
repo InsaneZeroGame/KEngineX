@@ -12,7 +12,7 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
     using namespace gameplay;
 
 
-    auto l_scene = std::unique_ptr< GamesScene>(new  GamesScene());
+    auto l_scene = std::unique_ptr< GamesScene>(new  GamesScene(p_file_name));
     {
         std::vector<tinyobj::material_t> materials;
 

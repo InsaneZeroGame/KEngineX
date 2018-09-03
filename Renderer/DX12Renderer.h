@@ -84,6 +84,10 @@ namespace Renderer {
 
         void InitDepthBuffer();
 
+        void InitRootSignature();
+
+        void RenderScene(ID3D12GraphicsCommandList*);
+
     public:
         // Inherited via IModule
         virtual void Init() override;
@@ -94,7 +98,7 @@ namespace Renderer {
 
         virtual void SetWindow(HWND hWnd, uint32_t height, uint32_t width) override;
 
-        virtual void LoadScene(std::shared_ptr<gameplay::GamesScene>) override;
+        __forceinline virtual void SetCurrentScene(std::shared_ptr<gameplay::GamesScene>) override;
 
     };//DX12Renderer
 }//Renderer

@@ -2,13 +2,14 @@
 #include <INoCopy.h>
 #include "GameActor.h"
 #include "GameCamera.h"
+#include "SceneNode.h"
 
 namespace gameplay
 {
-    class GamesScene final : public KFramework::INoCopy
+    class GamesScene final : public SceneNode
     {
     public:
-        GamesScene();
+        GamesScene(const std::string& p_name);
         ~GamesScene();
 
         std::shared_ptr<GameActor>  dummy_actor;

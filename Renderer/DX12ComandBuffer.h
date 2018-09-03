@@ -57,7 +57,7 @@ namespace Renderer
         {
             Close();
             ID3D12CommandList* l_cmd_lists[] = {m_cmd_buffer};
-            m_device->GetCmdQueue()->ExecuteCommandLists(1, l_cmd_lists);
+            m_device->FlushCmd(l_cmd_lists,1);
 
         }
         virtual void Close() const

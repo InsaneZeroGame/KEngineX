@@ -12,6 +12,7 @@
 #include "Win32Application.h"
 #include "ObjLoaderHelper.h"
 #include "GameInput.h"
+#include <GameDirector.h>
 
 
 HWND Win32Application::m_hwnd = nullptr;
@@ -94,8 +95,11 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
     //Init Renderer
     m_dx12_renderer = new Renderer::DX12Renderer();
     m_dx12_renderer->SetWindow(m_hwnd, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
-    m_dx12_renderer->LoadScene(assetlib::LoadObj("simple_scene.obj"));
+    auto& game_director = gameplay::GameDirector::GetGameDirector();
     m_dx12_renderer->Init();
+
+    game_director.SetRenderer(m_dx12_renderer);
+    game_director.Update();
 
     //Init GameInput
     static int i = 0;

@@ -36,13 +36,16 @@ namespace Renderer {
 
         Microsoft::WRL::ComPtr<ID3D12Resource> m_renderTargets[DX12RendererConstants::SWAP_CHAIN_COUNT];
 
-        std::array<DX12RenderCommndBuffer*, DX12RendererConstants::SWAP_CHAIN_COUNT> m_render_cmd;
+        std::array<std::unique_ptr<DX12RenderCommndBuffer>, DX12RendererConstants::SWAP_CHAIN_COUNT> m_render_cmd;
 
         std::array<ID3D12Fence*, DX12RendererConstants::SWAP_CHAIN_COUNT> m_fences;
    
         Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature;
 
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
+
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> m_shadow_map_pipelineState;
+
         
         CD3DX12_VIEWPORT m_viewport;
 
@@ -53,6 +56,10 @@ namespace Renderer {
         std::unique_ptr<UniformBuffer> m_camera_uniform;
 
         std::unique_ptr<DX12DepthBuffer> m_depth_buffer;
+
+        std::unique_ptr<DX12DepthBuffer> m_shadow_map;
+
+        std::unique_ptr<DX12RenderCommndBuffer> m_shadow_map_cmd;
 
         enum {
             CAMERA_UNIFORM_SIZE = 256 //192 byte per buffer(3 buffers),256 for device alignment

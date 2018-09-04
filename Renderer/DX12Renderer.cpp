@@ -110,6 +110,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
     
 
     // Create the pipeline state, which includes compiling and loading shaders.
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     {
         ComPtr<ID3DBlob> vertexShader;
         ComPtr<ID3DBlob> pixelShader;
@@ -133,7 +134,6 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
 
 
         // Describe and create the graphics pipeline state object (PSO).
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
         psoDesc.InputLayout = { inputElementDescs.data(), static_cast<uint32_t>(inputElementDescs.size()) };
         psoDesc.pRootSignature = m_rootSignature.Get();
         psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
@@ -151,7 +151,29 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         psoDesc.DSVFormat = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
         psoDesc.SampleDesc.Count = 1;
         ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
+    
+        //Shadow Map Pass
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC shadow_pso_desc = psoDesc;
+        {
+            shadow_pso_desc.PS = {};
+            shadow_pso_desc.NumRenderTargets = 0;
+            shadow_pso_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
+            shadow_pso_desc.BlendState.IndependentBlendEnable = FALSE;
+            shadow_pso_desc.BlendState.RenderTarget[0].BlendEnable = FALSE;
+            shadow_pso_desc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;
+            shadow_pso_desc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+            shadow_pso_desc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+            shadow_pso_desc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+            shadow_pso_desc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_INV_SRC_ALPHA;
+            shadow_pso_desc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+            shadow_pso_desc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0;
+            ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&shadow_pso_desc, IID_PPV_ARGS(&m_shadow_map_pipelineState)));
+        }
+    
     }
+
+
+   
 
 }
 
@@ -180,12 +202,48 @@ void Renderer::DX12Renderer::WaitForPreviousFrame()
 void Renderer::DX12Renderer::RecordGraphicsCmd()
 {
 
+    m_shadow_map_cmd->Reset();
+    auto shadow_cmd = m_shadow_map_cmd->GetDX12CmdList();
+    shadow_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
+    //Update Camera
+
+    //Setup Camera
+    using namespace Math;
+    Vector3 eye = Vector3(-8.0f, 5.0f, 5.0f);
+    Vector3 at = Vector3(0.0f, 0.0f, 0.0f);
+    Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
+
+    m_scene->m_main_camera.SetEyeAtUp(eye, at, up);
+    m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 0.1f, 15.0f);
+    m_scene->m_main_camera.Update();
+
+    memcpy(m_camera_uniform->data, &m_scene->m_main_camera.GetViewProjMatrix(), sizeof(float) * 16);
+    shadow_cmd->SetGraphicsRootConstantBufferView(1, m_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
+    shadow_cmd->RSSetViewports(1, &m_viewport);
+    shadow_cmd->RSSetScissorRects(1, &m_scissorRect);
+    shadow_cmd->ClearDepthStencilView(m_shadow_map->GetDSV(), D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
+    shadow_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    shadow_cmd->OMSetRenderTargets(0, nullptr, FALSE, &m_depth_buffer->GetDSV());
+
+    //Render Scene
+    RenderScene(shadow_cmd);
+    m_shadow_map_cmd->Flush();
+
+
     // Set necessary state.
     m_render_cmd[m_current_frameindex]->Reset();
     auto current_render_cmd = m_render_cmd[m_current_frameindex]->GetDX12CmdList();
 
     current_render_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
     //Update Camera
+    //Setup Camera
+    eye = Vector3(8.0f, 5.0f, 5.0f);
+    at = Vector3(0.0f, 0.0f, 0.0f);
+    up = Vector3(0.0f, 1.0f, 0.0f);
+
+    m_scene->m_main_camera.SetEyeAtUp(eye, at, up);
+    m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 0.1f, 15.0f);
+    m_scene->m_main_camera.Update();
     memcpy(m_camera_uniform->data, &m_scene->m_main_camera.GetViewProjMatrix(), sizeof(float) * 16);
     current_render_cmd->SetGraphicsRootConstantBufferView(1, m_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
     
@@ -215,8 +273,12 @@ void Renderer::DX12Renderer::InitCmdBuffers()
 {
     for (auto i = 0; i < m_render_cmd.size();++i)
     {
-        m_render_cmd[i] = new DX12RenderCommndBuffer(m_pipelineState.Get());
+        m_render_cmd[i] = std::unique_ptr<DX12RenderCommndBuffer>(new DX12RenderCommndBuffer(m_pipelineState.Get()));
     }
+
+    m_shadow_map_cmd = std::unique_ptr<DX12RenderCommndBuffer>(new DX12RenderCommndBuffer(m_shadow_map_pipelineState.Get()));
+
+
 }
 
 void Renderer::DX12Renderer::InitCameraUniform()
@@ -231,6 +293,11 @@ void Renderer::DX12Renderer::InitCameraUniform()
 
 void Renderer::DX12Renderer::InitDepthBuffer()
 {
+    m_shadow_map = std::unique_ptr<DX12DepthBuffer>(new DX12DepthBuffer());
+    m_shadow_map->Create(L"ShadowMap", DEPTH_BUFFER_WIDTH, DEPTH_BUFFER_HEIGHT, DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT);
+
+
+    //ToDo:May gain performance using DENY_SHADER_ACCESS.
     m_depth_buffer = std::unique_ptr<DX12DepthBuffer>(new DX12DepthBuffer());
     m_depth_buffer->Create(L"DepthBuffer", DEPTH_BUFFER_WIDTH, DEPTH_BUFFER_HEIGHT, DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT);
     DX12TransferManager::GetTransferManager().TransitionResource(*m_depth_buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
@@ -342,13 +409,5 @@ void Renderer::DX12Renderer::Update()
 
 void Renderer::DX12Renderer::Destory()
 {
-    for (auto cmd : m_render_cmd) {
-        if (cmd)
-        {
-            delete cmd;
-            cmd = nullptr;
-        }
-    }
-
     m_scene.reset();
 }

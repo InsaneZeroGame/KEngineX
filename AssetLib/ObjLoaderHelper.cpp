@@ -100,7 +100,7 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
 
 
     //Setup Camera
-    Vector3 eye = Vector3(5.0f, 5.0f, 5.0f);
+    Vector3 eye = Vector3(8.0f, 5.0f, 5.0f);
     Vector3 at  = Vector3(0.0f, 0.0f, 0.0f);
     Vector3 up  = Vector3(0.0f,1.0f,0.0f);
 

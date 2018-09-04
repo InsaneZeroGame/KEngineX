@@ -66,8 +66,6 @@ namespace Renderer {
 
     private:
 
-        void InitDevice();
-
         void InitSwapChain();
 
         void InitFences();

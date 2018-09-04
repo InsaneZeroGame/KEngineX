@@ -3,11 +3,11 @@
 
 Renderer::DX12Renderer::DX12Renderer():
     IRenderer(),
-    m_device(nullptr),
     m_viewport(0.0f, 0.0f, static_cast<float>(m_window_width), static_cast<float>(m_window_height)),
     m_scissorRect(0, 0, static_cast<LONG>(m_window_width), static_cast<LONG>(m_window_height)),
     m_fence_value(),
-    m_render_cmd()
+    m_render_cmd(),
+    m_device(DX12GpuDevice::GetGpuDevicePtr())
 {
 }
 
@@ -17,8 +17,6 @@ Renderer::DX12Renderer::~DX12Renderer()
 
 void Renderer::DX12Renderer::Init()
 {
-    InitDevice();
-    auto& manager = DX12TransferManager::GetTransferManager();
     InitSwapChain();
     InitDepthBuffer();
     InitFences();
@@ -26,12 +24,6 @@ void Renderer::DX12Renderer::Init()
     InitRootSignature();
     InitGraphicsPipelines();
     InitCmdBuffers();
-}
-
-
-void Renderer::DX12Renderer::InitDevice()
-{
-    m_device = DX12GpuDevice::GetGpuDevicePtr();
 }
 
 void Renderer::DX12Renderer::InitSwapChain()

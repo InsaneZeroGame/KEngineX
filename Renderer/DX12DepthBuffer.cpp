@@ -61,32 +61,32 @@ namespace Renderer {
             dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DMS;
         }
 
-        if (m_hDSV[0].ptr == 0)
+        if (m_hDSV[0].cpu_handle.ptr == 0)
         {
-            m_hDSV[0] = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV,0);
-            m_hDSV[1] = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV,1);
+            m_hDSV[0] = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+            m_hDSV[1] = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
         }
 
         dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-        DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[0]);
+        DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[0].cpu_handle);
 
         dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
-        DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[1]);
+        DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[1].cpu_handle);
 
         DXGI_FORMAT stencilReadFormat = GetStencilFormat(Format);
         if (stencilReadFormat != DXGI_FORMAT_UNKNOWN)
         {
-            if (m_hDSV[2].ptr == 0)
+            if (m_hDSV[2].cpu_handle.ptr == 0)
             {
-                m_hDSV[2] = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV,2);
-                m_hDSV[3] = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV,3);
+                m_hDSV[2] = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+                m_hDSV[3] = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
             }
 
             dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_STENCIL;
-            DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[2]);
+            DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[2].cpu_handle);
 
             dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH | D3D12_DSV_FLAG_READ_ONLY_STENCIL;
-            DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[3]);
+            DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[3].cpu_handle);
         }
         else
         {
@@ -94,8 +94,8 @@ namespace Renderer {
             m_hDSV[3] = m_hDSV[1];
         }
 
-        if (m_hDepthSRV.ptr == 0)
-            m_hDepthSRV = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 4);
+        if (m_hDepthSRV.cpu_handle.ptr == 0)
+            m_hDepthSRV = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
         // Create the shader resource view
         D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
@@ -110,15 +110,15 @@ namespace Renderer {
             SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
         }
         SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateShaderResourceView(Resource, &SRVDesc, m_hDepthSRV);
+        DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateShaderResourceView(Resource, &SRVDesc, m_hDepthSRV.cpu_handle);
 
         if (stencilReadFormat != DXGI_FORMAT_UNKNOWN)
         {
-            if (m_hStencilSRV.ptr == 0)
-                m_hStencilSRV = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 4);
+            if (m_hStencilSRV.cpu_handle.ptr == 0)
+                m_hStencilSRV = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
             SRVDesc.Format = stencilReadFormat;
-            DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateShaderResourceView(Resource, &SRVDesc, m_hStencilSRV);
+            DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateShaderResourceView(Resource, &SRVDesc, m_hStencilSRV.cpu_handle);
         }
     }
 }

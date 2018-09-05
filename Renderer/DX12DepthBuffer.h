@@ -24,12 +24,12 @@ namespace Renderer
         DX12DepthBuffer(float ClearDepth = 0.0f, uint8_t ClearStencil = 0)
             : m_ClearDepth(ClearDepth), m_ClearStencil(ClearStencil)
         {
-            m_hDSV[0].ptr = 0;
-            m_hDSV[1].ptr = 0;
-            m_hDSV[2].ptr = 0;
-            m_hDSV[3].ptr = 0;
-            m_hDepthSRV.ptr = 0;
-            m_hStencilSRV.ptr = 0;
+            m_hDSV[0] = {};
+            m_hDSV[1] = {};
+            m_hDSV[2] = {};
+            m_hDSV[3] = {};
+            m_hDepthSRV = {};
+            m_hStencilSRV = {};
         }
 
         // Create a depth buffer.  If an address is supplied, memory will not be allocated.
@@ -45,12 +45,12 @@ namespace Renderer
             D3D12_GPU_VIRTUAL_ADDRESS VidMemPtr = 0);
 
         // Get pre-created CPU-visible descriptor handles
-        const D3D12_CPU_DESCRIPTOR_HANDLE& GetDSV() const { return m_hDSV[0]; }
-        const D3D12_CPU_DESCRIPTOR_HANDLE& GetDSV_DepthReadOnly() const { return m_hDSV[1]; }
-        const D3D12_CPU_DESCRIPTOR_HANDLE& GetDSV_StencilReadOnly() const { return m_hDSV[2]; }
-        const D3D12_CPU_DESCRIPTOR_HANDLE& GetDSV_ReadOnly() const { return m_hDSV[3]; }
-        const D3D12_CPU_DESCRIPTOR_HANDLE& GetDepthSRV() const { return m_hDepthSRV; }
-        const D3D12_CPU_DESCRIPTOR_HANDLE& GetStencilSRV() const { return m_hStencilSRV; }
+        const DescriptorHandle& GetDSV() const { return m_hDSV[0]; }
+        const DescriptorHandle& GetDSV_DepthReadOnly() const { return m_hDSV[1]; }
+        const DescriptorHandle& GetDSV_StencilReadOnly() const { return m_hDSV[2]; }
+        const DescriptorHandle& GetDSV_ReadOnly() const { return m_hDSV[3]; }
+        const DescriptorHandle& GetDepthSRV() const { return m_hDepthSRV; }
+        const DescriptorHandle& GetStencilSRV() const { return m_hStencilSRV; }
 
         float GetClearDepth() const { return m_ClearDepth; }
         uint8_t GetClearStencil() const { return m_ClearStencil; }
@@ -61,8 +61,8 @@ namespace Renderer
 
         float m_ClearDepth;
         uint8_t m_ClearStencil;
-        D3D12_CPU_DESCRIPTOR_HANDLE m_hDSV[4];
-        D3D12_CPU_DESCRIPTOR_HANDLE m_hDepthSRV;
-        D3D12_CPU_DESCRIPTOR_HANDLE m_hStencilSRV;
+        DescriptorHandle m_hDSV[4];
+        DescriptorHandle m_hDepthSRV;
+        DescriptorHandle m_hStencilSRV;
     };
 }

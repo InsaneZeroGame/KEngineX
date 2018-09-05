@@ -13,6 +13,14 @@
 namespace Renderer
 {
 
+    struct DescriptorHandle
+    {
+        D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle;
+        D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle;
+    };
+
+
+
     class DX12GpuDevice : public KFramework::INoCopy
     {
     public:
@@ -40,8 +48,13 @@ namespace Renderer
         void FlushCmd(ID3D12CommandList** p_cmd,uint32_t count);
 
         
-        D3D12_CPU_DESCRIPTOR_HANDLE GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type,uint32_t index);
+        DescriptorHandle GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type);
        
+        __forceinline Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE p_type)
+        {
+            return m_desc_heaps[p_type];
+        }
+
         ~DX12GpuDevice();
     private:
 

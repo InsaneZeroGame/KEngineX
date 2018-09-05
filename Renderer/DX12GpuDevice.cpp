@@ -98,7 +98,7 @@ void Renderer::DX12GpuDevice::AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE 
     D3D12_DESCRIPTOR_HEAP_DESC Desc;
     Desc.Type = p_type;
     Desc.NumDescriptors = DESCRIPTOR_HANDLE_MAX_NUM;
-    Desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    Desc.Flags = p_type == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE  :  D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     Desc.NodeMask = 1;
 
     ASSERT_SUCCEEDED(m_device->CreateDescriptorHeap(&Desc, IID_PPV_ARGS(&m_desc_heaps[p_type])));
@@ -121,12 +121,14 @@ void Renderer::DX12GpuDevice::FlushCmd(ID3D12CommandList** pp_cmd, uint32_t coun
     WaitForGPU();
 }
 
-D3D12_CPU_DESCRIPTOR_HANDLE Renderer::DX12GpuDevice::GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type,uint32_t index)
+Renderer::DescriptorHandle Renderer::DX12GpuDevice::GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type)
 {
     assert(m_desc_heaps_handle_count[p_type] <= DESCRIPTOR_HANDLE_MAX_NUM && "Handle Num Exceeds max num");
+    DescriptorHandle l_handle = {};
+    l_handle.cpu_handle.ptr = m_desc_heaps[p_type]->GetCPUDescriptorHandleForHeapStart().ptr + m_device->GetDescriptorHandleIncrementSize(p_type) * m_desc_heaps_handle_count[p_type];
+    l_handle.gpu_handle.ptr = m_desc_heaps[p_type]->GetGPUDescriptorHandleForHeapStart().ptr + m_device->GetDescriptorHandleIncrementSize(p_type) * m_desc_heaps_handle_count[p_type];
     m_desc_heaps_handle_count[p_type]++;
-    D3D12_CPU_DESCRIPTOR_HANDLE l_handle = {};
-    l_handle.ptr = m_desc_heaps[p_type]->GetCPUDescriptorHandleForHeapStart().ptr + m_device->GetDescriptorHandleIncrementSize(p_type) * index;
+
     return l_handle;
 }
 

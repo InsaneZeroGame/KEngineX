@@ -210,9 +210,9 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         shadow_cmd->SetGraphicsRootConstantBufferView(1, m_shadow_map_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
         shadow_cmd->RSSetViewports(1, &m_viewport);
         shadow_cmd->RSSetScissorRects(1, &m_scissorRect);
-        shadow_cmd->ClearDepthStencilView(m_shadow_map->GetDSV(), D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
+        shadow_cmd->ClearDepthStencilView(m_shadow_map->GetDSV().cpu_handle, D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
         shadow_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        shadow_cmd->OMSetRenderTargets(0, nullptr, FALSE, &m_depth_buffer->GetDSV());
+        shadow_cmd->OMSetRenderTargets(0, nullptr, FALSE, &m_shadow_map->GetDSV().cpu_handle);
         //Render Scene
         RenderScene(shadow_cmd);
         m_shadow_map_cmd->Flush();
@@ -233,7 +233,11 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
 
         current_render_cmd->SetGraphicsRootConstantBufferView(1, m_main_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
         //To Get a gpu handle from a cpu one.
-        current_render_cmd->SetGraphicsRootDescriptorTable(2, m_shadow_map->GetDepthSRV());
+
+        ID3D12DescriptorHeap* l_heaps[] = { m_device->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).Get() };
+
+        current_render_cmd->SetDescriptorHeaps(1, l_heaps);
+        current_render_cmd->SetGraphicsRootDescriptorTable(2, m_shadow_map->GetDepthSRV().gpu_handle);
         current_render_cmd->RSSetViewports(1, &m_viewport);
         current_render_cmd->RSSetScissorRects(1, &m_scissorRect);
 
@@ -245,13 +249,14 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         // Record commands.
         const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
         current_render_cmd->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-        current_render_cmd->ClearDepthStencilView(m_depth_buffer->GetDSV(), D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
+        current_render_cmd->ClearDepthStencilView(m_depth_buffer->GetDSV().cpu_handle, D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
         current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        current_render_cmd->OMSetRenderTargets(1, &rtvHandle, FALSE, &m_depth_buffer->GetDSV());
+        current_render_cmd->OMSetRenderTargets(1, &rtvHandle, FALSE, &m_depth_buffer->GetDSV().cpu_handle);
         //Render Scene
         RenderScene(current_render_cmd);
         // Indicate that the back buffer will now be used to present.
         current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+        DX12TransferManager::GetTransferManager().TransitionResource(*m_shadow_map, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 
         ThrowIfFailed(current_render_cmd->Close());
     }
@@ -319,7 +324,7 @@ void Renderer::DX12Renderer::InitRootSignature()
 
         //DesciptorTable
         D3D12_ROOT_PARAMETER l_desc_table_parameter = {};
-        l_desc_table_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+        l_desc_table_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         l_desc_table_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
         D3D12_DESCRIPTOR_RANGE shadow_map_desc_range;

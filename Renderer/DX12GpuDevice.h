@@ -8,6 +8,7 @@
 #include <wrl.h>
 #include "DX12RendererConstants.h"
 #include "Utility.h"
+#include <array>
 
 namespace Renderer
 {
@@ -48,9 +49,10 @@ namespace Renderer
 
     private:
 
-        enum { DESCRIPTOR_SUM_NUM = 1 };
+        enum { DESCRIPTOR_HANDLE_MAX_NUM = 20 };
         enum { DESCRIPTOR_TYPE_NUM = 5 };
         enum { FENCE_WAIT_TIME_INFINITY = 0xffffffffffffffff};
+
 
         bool m_useWarpDevice;
 
@@ -65,6 +67,8 @@ namespace Renderer
         void AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE);
 
         Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_desc_heaps[DESCRIPTOR_TYPE_NUM];
+
+        std::array<uint32_t, DESCRIPTOR_TYPE_NUM> m_desc_heaps_handle_count;
 
         Microsoft::WRL::ComPtr<ID3D12Fence> m_cmd_flush_fence;
 

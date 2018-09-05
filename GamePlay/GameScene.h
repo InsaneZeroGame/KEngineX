@@ -15,6 +15,7 @@ namespace gameplay
         std::shared_ptr<GameActor>  dummy_actor;
         
         GameCamera m_main_camera;
+        GameCamera m_shadow_camera;
 
     private:
 

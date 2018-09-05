@@ -1,7 +1,8 @@
 #include "DX12GpuDevice.h"
 #include "DXSampleHelper.h"
 Renderer::DX12GpuDevice::DX12GpuDevice():
-    m_useWarpDevice(false)
+    m_useWarpDevice(false),
+    m_desc_heaps_handle_count({})
 {
 
     UINT dxgiFactoryFlags = 0;
@@ -58,6 +59,7 @@ Renderer::DX12GpuDevice::DX12GpuDevice():
 
     //Allocate Descriptor Heaps
     AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+    AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     m_device->CreateFence(0, D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_cmd_flush_fence));
 }
@@ -95,7 +97,7 @@ void Renderer::DX12GpuDevice::AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE 
 {
     D3D12_DESCRIPTOR_HEAP_DESC Desc;
     Desc.Type = p_type;
-    Desc.NumDescriptors = DESCRIPTOR_SUM_NUM;
+    Desc.NumDescriptors = DESCRIPTOR_HANDLE_MAX_NUM;
     Desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
     Desc.NodeMask = 1;
 
@@ -121,6 +123,8 @@ void Renderer::DX12GpuDevice::FlushCmd(ID3D12CommandList** pp_cmd, uint32_t coun
 
 D3D12_CPU_DESCRIPTOR_HANDLE Renderer::DX12GpuDevice::GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type,uint32_t index)
 {
+    assert(m_desc_heaps_handle_count[p_type] <= DESCRIPTOR_HANDLE_MAX_NUM && "Handle Num Exceeds max num");
+    m_desc_heaps_handle_count[p_type]++;
     D3D12_CPU_DESCRIPTOR_HANDLE l_handle = {};
     l_handle.ptr = m_desc_heaps[p_type]->GetCPUDescriptorHandleForHeapStart().ptr + m_device->GetDescriptorHandleIncrementSize(p_type) * index;
     return l_handle;

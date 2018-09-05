@@ -114,6 +114,8 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
     {
         ComPtr<ID3DBlob> vertexShader;
         ComPtr<ID3DBlob> pixelShader;
+        ComPtr<ID3DBlob> shadow_map_vs;
+
 
 #if defined(_DEBUG)
         // Enable better shader debugging with the graphics debugging tools.
@@ -122,8 +124,9 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         UINT compileFlags = 0;
 #endif
 
-        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shaders.hlsl").c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shaders.hlsl").c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shadow_map_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "ShadowVSMain", "vs_5_0", compileFlags, 0, &shadow_map_vs, nullptr));
 
         // Define the vertex input layout.
         std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs =
@@ -148,7 +151,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
         psoDesc.NumRenderTargets = 1;
         psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-        psoDesc.DSVFormat = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+        psoDesc.DSVFormat = DEPTH_BUFFER_FORMAT;
         psoDesc.SampleDesc.Count = 1;
         ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
     
@@ -156,6 +159,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         D3D12_GRAPHICS_PIPELINE_STATE_DESC shadow_pso_desc = psoDesc;
         {
             shadow_pso_desc.PS = {};
+            shadow_pso_desc.VS = CD3DX12_SHADER_BYTECODE(shadow_map_vs.Get());
             shadow_pso_desc.NumRenderTargets = 0;
             shadow_pso_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
             shadow_pso_desc.BlendState.IndependentBlendEnable = FALSE;
@@ -169,12 +173,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
             shadow_pso_desc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0;
             ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&shadow_pso_desc, IID_PPV_ARGS(&m_shadow_map_pipelineState)));
         }
-    
     }
-
-
-   
-
 }
 
 
@@ -201,72 +200,62 @@ void Renderer::DX12Renderer::WaitForPreviousFrame()
 
 void Renderer::DX12Renderer::RecordGraphicsCmd()
 {
-
-    m_shadow_map_cmd->Reset();
-    auto shadow_cmd = m_shadow_map_cmd->GetDX12CmdList();
-    shadow_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
-    //Update Camera
-
-    //Setup Camera
-    using namespace Math;
-    Vector3 eye = Vector3(-8.0f, 5.0f, 5.0f);
-    Vector3 at = Vector3(0.0f, 0.0f, 0.0f);
-    Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
-
-    m_scene->m_main_camera.SetEyeAtUp(eye, at, up);
-    m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 0.1f, 15.0f);
-    m_scene->m_main_camera.Update();
-
-    memcpy(m_camera_uniform->data, &m_scene->m_main_camera.GetViewProjMatrix(), sizeof(float) * 16);
-    shadow_cmd->SetGraphicsRootConstantBufferView(1, m_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
-    shadow_cmd->RSSetViewports(1, &m_viewport);
-    shadow_cmd->RSSetScissorRects(1, &m_scissorRect);
-    shadow_cmd->ClearDepthStencilView(m_shadow_map->GetDSV(), D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
-    shadow_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    shadow_cmd->OMSetRenderTargets(0, nullptr, FALSE, &m_depth_buffer->GetDSV());
-
-    //Render Scene
-    RenderScene(shadow_cmd);
-    m_shadow_map_cmd->Flush();
-
-
-    // Set necessary state.
-    m_render_cmd[m_current_frameindex]->Reset();
-    auto current_render_cmd = m_render_cmd[m_current_frameindex]->GetDX12CmdList();
-
-    current_render_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
-    //Update Camera
-    //Setup Camera
-    eye = Vector3(8.0f, 5.0f, 5.0f);
-    at = Vector3(0.0f, 0.0f, 0.0f);
-    up = Vector3(0.0f, 1.0f, 0.0f);
-
-    m_scene->m_main_camera.SetEyeAtUp(eye, at, up);
-    m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 0.1f, 15.0f);
-    m_scene->m_main_camera.Update();
-    memcpy(m_camera_uniform->data, &m_scene->m_main_camera.GetViewProjMatrix(), sizeof(float) * 16);
-    current_render_cmd->SetGraphicsRootConstantBufferView(1, m_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
+    //Shadow Map Pass
+    {
+        m_shadow_map_cmd->Reset();
+        auto shadow_cmd = m_shadow_map_cmd->GetDX12CmdList();
+        shadow_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
+        //Update Shadow Camera Uniform
+        memcpy(m_shadow_map_camera_uniform->data + sizeof(float) * 16, &m_scene->m_shadow_camera.GetViewProjMatrix(), sizeof(float) * 16);
+        shadow_cmd->SetGraphicsRootConstantBufferView(1, m_shadow_map_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
+        shadow_cmd->RSSetViewports(1, &m_viewport);
+        shadow_cmd->RSSetScissorRects(1, &m_scissorRect);
+        shadow_cmd->ClearDepthStencilView(m_shadow_map->GetDSV(), D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
+        shadow_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        shadow_cmd->OMSetRenderTargets(0, nullptr, FALSE, &m_depth_buffer->GetDSV());
+        //Render Scene
+        RenderScene(shadow_cmd);
+        m_shadow_map_cmd->Flush();
+        //Expose shadow map to shader.
+        DX12TransferManager::GetTransferManager().TransitionResource(*m_shadow_map, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+    }
     
-    current_render_cmd->RSSetViewports(1, &m_viewport);
-    current_render_cmd->RSSetScissorRects(1, &m_scissorRect);
 
-    // Indicate that the back buffer will be used as a render target.
-    current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+    //Rendering Pass
+    {
+        m_render_cmd[m_current_frameindex]->Reset();
+        auto current_render_cmd = m_render_cmd[m_current_frameindex]->GetDX12CmdList();
 
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_current_frameindex, m_rtvDescriptorSize);
+        current_render_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
+        //Update Main Camera uniform
+        memcpy(m_main_camera_uniform->data, &m_scene->m_main_camera.GetViewProjMatrix(), sizeof(float) * 16);
+        memcpy(m_main_camera_uniform->data + sizeof(float) * 16, &m_scene->m_shadow_camera.GetViewProjMatrix(), sizeof(float) * 16);
 
-    // Record commands.
-    const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-    current_render_cmd->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-    current_render_cmd->ClearDepthStencilView(m_depth_buffer->GetDSV(), D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
-    current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    current_render_cmd->OMSetRenderTargets(1, &rtvHandle, FALSE, &m_depth_buffer->GetDSV());
-    //Render Scene
-    RenderScene(current_render_cmd);
-    // Indicate that the back buffer will now be used to present.
-    current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+        current_render_cmd->SetGraphicsRootConstantBufferView(1, m_main_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
+        //To Get a gpu handle from a cpu one.
+        current_render_cmd->SetGraphicsRootDescriptorTable(2, m_shadow_map->GetDepthSRV());
+        current_render_cmd->RSSetViewports(1, &m_viewport);
+        current_render_cmd->RSSetScissorRects(1, &m_scissorRect);
 
-    ThrowIfFailed(current_render_cmd->Close());
+        // Indicate that the back buffer will be used as a render target.
+        current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_current_frameindex, m_rtvDescriptorSize);
+
+        // Record commands.
+        const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
+        current_render_cmd->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+        current_render_cmd->ClearDepthStencilView(m_depth_buffer->GetDSV(), D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
+        current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        current_render_cmd->OMSetRenderTargets(1, &rtvHandle, FALSE, &m_depth_buffer->GetDSV());
+        //Render Scene
+        RenderScene(current_render_cmd);
+        // Indicate that the back buffer will now be used to present.
+        current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+        ThrowIfFailed(current_render_cmd->Close());
+    }
+   
 }
 
 void Renderer::DX12Renderer::InitCmdBuffers()
@@ -287,19 +276,22 @@ void Renderer::DX12Renderer::InitCameraUniform()
     //Matrix : 4x4 = 16 floats
     //MVP = Matrix * 3
     //Triple Buffer = MVP * 3;
-    m_camera_uniform = std::unique_ptr<UniformBuffer>(new UniformBuffer(CAMERA_UNIFORM_SIZE * 3));
-    
+    m_main_camera_uniform = std::unique_ptr<UniformBuffer>(new UniformBuffer(CAMERA_UNIFORM_SIZE * 3));
+
+    m_shadow_map_camera_uniform = std::unique_ptr<UniformBuffer>(new UniformBuffer(CAMERA_UNIFORM_SIZE * 3));
+
 }
 
 void Renderer::DX12Renderer::InitDepthBuffer()
 {
     m_shadow_map = std::unique_ptr<DX12DepthBuffer>(new DX12DepthBuffer());
-    m_shadow_map->Create(L"ShadowMap", DEPTH_BUFFER_WIDTH, DEPTH_BUFFER_HEIGHT, DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT);
+    m_shadow_map->Create(L"ShadowMap", DEPTH_BUFFER_WIDTH, DEPTH_BUFFER_HEIGHT, DEPTH_BUFFER_FORMAT);
+    DX12TransferManager::GetTransferManager().TransitionResource(*m_shadow_map, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 
 
     //ToDo:May gain performance using DENY_SHADER_ACCESS.
     m_depth_buffer = std::unique_ptr<DX12DepthBuffer>(new DX12DepthBuffer());
-    m_depth_buffer->Create(L"DepthBuffer", DEPTH_BUFFER_WIDTH, DEPTH_BUFFER_HEIGHT, DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT);
+    m_depth_buffer->Create(L"DepthBuffer", DEPTH_BUFFER_WIDTH, DEPTH_BUFFER_HEIGHT, DEPTH_BUFFER_FORMAT);
     DX12TransferManager::GetTransferManager().TransitionResource(*m_depth_buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
 
@@ -325,12 +317,34 @@ void Renderer::DX12Renderer::InitRootSignature()
         l_camera_parameter.Descriptor.RegisterSpace = 0;
         l_camera_parameter.Descriptor.ShaderRegister = 1;
 
-        D3D12_ROOT_PARAMETER l_parameters[] = {
+        //DesciptorTable
+        D3D12_ROOT_PARAMETER l_desc_table_parameter = {};
+        l_desc_table_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+        l_desc_table_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+        D3D12_DESCRIPTOR_RANGE shadow_map_desc_range;
+
+        shadow_map_desc_range.BaseShaderRegister = 2;
+        shadow_map_desc_range.NumDescriptors = 1;
+        shadow_map_desc_range.OffsetInDescriptorsFromTableStart = 0;
+        shadow_map_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        shadow_map_desc_range.RegisterSpace = 0;
+
+        std::vector<D3D12_DESCRIPTOR_RANGE> ranges = 
+        {
+            shadow_map_desc_range,
+        };
+        l_desc_table_parameter.DescriptorTable.NumDescriptorRanges = ranges.size();
+        l_desc_table_parameter.DescriptorTable.pDescriptorRanges = ranges.data();
+
+        std::vector<D3D12_ROOT_PARAMETER> l_parameters = {
             l_material_parameter,
-            l_camera_parameter, };
+            l_camera_parameter, 
+            l_desc_table_parameter,
+        };
 
 
-        rootSignatureDesc.Init(2, l_parameters);
+        rootSignatureDesc.Init(l_parameters.size(), l_parameters.data());
         rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> signature;
         ComPtr<ID3DBlob> error;

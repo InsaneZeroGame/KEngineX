@@ -53,13 +53,16 @@ namespace Renderer {
 
         std::shared_ptr<gameplay::GamesScene> m_scene;
 
-        std::unique_ptr<UniformBuffer> m_camera_uniform;
+        std::unique_ptr<UniformBuffer> m_main_camera_uniform;
 
         std::unique_ptr<DX12DepthBuffer> m_depth_buffer;
 
         std::unique_ptr<DX12DepthBuffer> m_shadow_map;
 
         std::unique_ptr<DX12RenderCommndBuffer> m_shadow_map_cmd;
+
+        std::unique_ptr<UniformBuffer> m_shadow_map_camera_uniform;
+
 
         enum {
             CAMERA_UNIFORM_SIZE = 256 //192 byte per buffer(3 buffers),256 for device alignment
@@ -70,6 +73,9 @@ namespace Renderer {
         enum {
             DEPTH_BUFFER_HEIGHT = 600
         };
+
+        const DXGI_FORMAT DEPTH_BUFFER_FORMAT = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+
 
     private:
 

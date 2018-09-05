@@ -36,7 +36,7 @@ namespace Renderer {
         ResourceDesc.SampleDesc.Count = Samples;
 
         D3D12_CLEAR_VALUE ClearValue = {};
-        ClearValue.DepthStencil.Depth = 1.0f;
+        ClearValue.DepthStencil.Depth = 0.0f;
         ClearValue.DepthStencil.Stencil = 0;
         ClearValue.Format = Format;
         CreateTextureResource(Name, ResourceDesc, ClearValue, VidMemPtr);
@@ -71,7 +71,7 @@ namespace Renderer {
         DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[0]);
 
         dsvDesc.Flags = D3D12_DSV_FLAG_READ_ONLY_DEPTH;
-        //DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[1]);
+        DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateDepthStencilView(Resource, &dsvDesc, m_hDSV[1]);
 
         DXGI_FORMAT stencilReadFormat = GetStencilFormat(Format);
         if (stencilReadFormat != DXGI_FORMAT_UNKNOWN)
@@ -95,7 +95,7 @@ namespace Renderer {
         }
 
         if (m_hDepthSRV.ptr == 0)
-            m_hDepthSRV = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 4);
+            m_hDepthSRV = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 4);
 
         // Create the shader resource view
         D3D12_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
@@ -110,7 +110,7 @@ namespace Renderer {
             SRVDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
         }
         SRVDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        //DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateShaderResourceView(Resource, &SRVDesc, m_hDepthSRV);
+        DX12GpuDevice::GetGpuDevice().GetDX12Device()->CreateShaderResourceView(Resource, &SRVDesc, m_hDepthSRV);
 
         if (stencilReadFormat != DXGI_FORMAT_UNKNOWN)
         {

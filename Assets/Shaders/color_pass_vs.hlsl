@@ -33,8 +33,8 @@ PSInput main(float3 position : POSITION, float4 color : COLOR)
 
 	result.position = mul(modelToProj,float4(position,1.0f));
 	result.color = diffuse;
-    result.shadow_coord = mul(modelToShadow, float4(position, 1.0f)).xyz;
-    //result.shadow_coord = shadow_coord.xyz / shadow_coord.w;
+    float4 shadow_coord = mul(modelToShadow, float4(position, 1.0f));
+    result.shadow_coord = shadow_coord.xyz / shadow_coord.w;
 
 	return result;
 }

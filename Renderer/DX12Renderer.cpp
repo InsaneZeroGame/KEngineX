@@ -160,6 +160,8 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         {
             shadow_pso_desc.PS = {};
             shadow_pso_desc.VS = CD3DX12_SHADER_BYTECODE(shadow_map_vs.Get());
+            shadow_pso_desc.RasterizerState.DepthBias = -5;
+            shadow_pso_desc.RasterizerState.SlopeScaledDepthBias = -2.5f;
             shadow_pso_desc.NumRenderTargets = 0;
             shadow_pso_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
             shadow_pso_desc.BlendState.IndependentBlendEnable = FALSE;
@@ -228,8 +230,11 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
 
         current_render_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
         //Update Main Camera uniform
+        using namespace Math;
+        auto shadow_prefix = Math::Matrix4(AffineTransform(Matrix3::MakeScale(0.5f, -0.5f, 1.0f), Vector3(0.5f, 0.5f, 0.0f)));
+        auto shadow_sample_matrix = shadow_prefix * m_scene->m_shadow_camera.GetViewProjMatrix();
         memcpy(m_main_camera_uniform->data, &m_scene->m_main_camera.GetViewProjMatrix(), sizeof(float) * 16);
-        memcpy(m_main_camera_uniform->data + sizeof(float) * 16, &m_scene->m_shadow_camera.GetViewProjMatrix(), sizeof(float) * 16);
+        memcpy(m_main_camera_uniform->data + sizeof(float) * 16, &shadow_sample_matrix, sizeof(float) * 16);
 
         current_render_cmd->SetGraphicsRootConstantBufferView(1, m_main_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
         //To Get a gpu handle from a cpu one.

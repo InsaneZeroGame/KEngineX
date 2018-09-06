@@ -74,7 +74,7 @@ namespace Renderer {
             DEPTH_BUFFER_HEIGHT = 600
         };
 
-        const DXGI_FORMAT DEPTH_BUFFER_FORMAT = DXGI_FORMAT::DXGI_FORMAT_D32_FLOAT;
+        const DXGI_FORMAT DEPTH_BUFFER_FORMAT = DXGI_FORMAT::DXGI_FORMAT_D16_UNORM;
 
 
     private:

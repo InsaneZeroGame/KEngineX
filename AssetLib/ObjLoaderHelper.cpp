@@ -109,7 +109,7 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
     l_scene->m_main_camera.Update();
 
     //Setup Shadow Camera
-    eye = Vector3(-8.0f, 5.0f, -5.0f);
+    eye = Vector3(-8.0f, 5.0f, 5.0f);
     at = Vector3(0.0f, 0.0f, 0.0f);
     up = Vector3(0.0f, 1.0f, 0.0f);
 

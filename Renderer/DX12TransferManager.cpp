@@ -11,18 +11,14 @@ Renderer::DX12TransferManager::DX12TransferManager() :
 
 void Renderer::DX12TransferManager::InitBuffers()
 {
-   
-
     m_upload_buffer = std::unique_ptr<UniformBuffer>(new UniformBuffer(KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE));
     m_vertex_buffer = std::unique_ptr<VertexIndexBuffer>(new VertexIndexBuffer(KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE));
-
 }
 
 void Renderer::DX12TransferManager::InitCmdBuffers()
 {
-    m_CommandList = new DX12RenderCommndBuffer(nullptr);
-    m_UploadCommandList = new DX12RenderCommndBuffer(nullptr);
-
+    m_CommandList = std::unique_ptr<DX12RenderCommndBuffer>(new DX12RenderCommndBuffer(nullptr));
+    m_UploadCommandList = std::unique_ptr<DX12RenderCommndBuffer>(new DX12RenderCommndBuffer(nullptr));
 }
 
 void Renderer::DX12TransferManager::TransitionResource(DX12GpuResource& Resource, D3D12_RESOURCE_STATES NewState, bool FlushImmediate, D3D12_COMMAND_LIST_TYPE p_type)
@@ -150,13 +146,4 @@ void Renderer::DX12TransferManager::InsertUAVBarrier(DX12GpuResource& Resource, 
 
 Renderer::DX12TransferManager::~DX12TransferManager()
 {
-    if (m_CommandList) {
-        delete m_CommandList;
-        m_CommandList = nullptr;
-    }
-    if (m_UploadCommandList) 
-    {
-        delete m_UploadCommandList;
-        m_CommandList = nullptr;
-    }
 }

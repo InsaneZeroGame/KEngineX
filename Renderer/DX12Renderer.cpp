@@ -124,9 +124,9 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         UINT compileFlags = 0;
 #endif
 
-        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
-        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shadow_map_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "ShadowVSMain", "vs_5_0", compileFlags, 0, &shadow_map_vs, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shadow_map_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_0", compileFlags, 0, &shadow_map_vs, nullptr));
 
         // Define the vertex input layout.
         std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs =
@@ -322,6 +322,9 @@ void Renderer::DX12Renderer::InitRootSignature()
         l_camera_parameter.Descriptor.RegisterSpace = 0;
         l_camera_parameter.Descriptor.ShaderRegister = 1;
 
+        
+
+
         //DesciptorTable
         D3D12_ROOT_PARAMETER l_desc_table_parameter = {};
         l_desc_table_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -329,7 +332,7 @@ void Renderer::DX12Renderer::InitRootSignature()
 
         D3D12_DESCRIPTOR_RANGE shadow_map_desc_range;
 
-        shadow_map_desc_range.BaseShaderRegister = 2;
+        shadow_map_desc_range.BaseShaderRegister = 0;
         shadow_map_desc_range.NumDescriptors = 1;
         shadow_map_desc_range.OffsetInDescriptorsFromTableStart = 0;
         shadow_map_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -349,7 +352,22 @@ void Renderer::DX12Renderer::InitRootSignature()
         };
 
 
-        rootSignatureDesc.Init(l_parameters.size(), l_parameters.data());
+
+        D3D12_STATIC_SAMPLER_DESC l_shadow_sampler = {};
+        l_shadow_sampler.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
+        l_shadow_sampler.ComparisonFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+        l_shadow_sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        l_shadow_sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        l_shadow_sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        l_shadow_sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        l_shadow_sampler.RegisterSpace = 0;
+        l_shadow_sampler.ShaderRegister = 0;
+        std::vector<D3D12_STATIC_SAMPLER_DESC> l_static_samplers = 
+        {
+            l_shadow_sampler
+        };
+
+        rootSignatureDesc.Init(l_parameters.size(), l_parameters.data(),l_static_samplers.size(),l_static_samplers.data());
         rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> signature;
         ComPtr<ID3DBlob> error;

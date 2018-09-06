@@ -23,7 +23,15 @@ cbuffer MVP: register(b1)
 
 };
 
-float4 PSMain(PSInput input) : SV_TARGET
+
+
+SamplerComparisonState shadow_sampler : register(s0);
+
+Texture2D<float> shadow_map : register(t0);
+
+float4 main(PSInput input) : SV_TARGET
 {
-	return input.color;
+    float shadow = shadow_map.SampleCmpLevelZero(shadow_sampler,input.shadow_coord.xy,input.shadow_coord.z/100.0F);
+
+    return shadow * input.color;
 }

@@ -16,7 +16,7 @@ cbuffer MVP: register(b1)
 
 
 
-PSInput ShadowVSMain(float4 position : POSITION, float4 color : COLOR)
+PSInput main(float4 position : POSITION, float4 color : COLOR)
 {
     PSInput shadow_map_out;
     shadow_map_out.position = mul(modelToShadow, position);

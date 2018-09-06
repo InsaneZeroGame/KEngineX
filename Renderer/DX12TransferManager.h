@@ -69,8 +69,8 @@ namespace Renderer
         std::unique_ptr<UniformBuffer> m_upload_buffer;
         D3D12_RESOURCE_BARRIER m_ResourceBarrierBuffer[16];
         UINT m_NumBarriersToFlush;
-        DX12RenderCommndBuffer* m_CommandList;
-        DX12RenderCommndBuffer* m_UploadCommandList;
+        std::unique_ptr<DX12RenderCommndBuffer> m_CommandList;
+        std::unique_ptr<DX12RenderCommndBuffer> m_UploadCommandList;
 
         std::queue<TransferJob*> m_jobs;
     private:

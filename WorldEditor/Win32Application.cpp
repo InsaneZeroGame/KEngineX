@@ -70,18 +70,17 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 	windowClass.lpszClassName = "KEngine";
 	RegisterClassEx(&windowClass);
 
-	RECT windowRect = { 0, 0, static_cast<LONG>(KEngineConstants::WINDOW_WIDTH), static_cast<LONG>(KEngineConstants::WINDOW_HEIGHT)};
-	AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
+	//AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
 
 	// Create the window and store a handle to it.
 	m_hwnd = CreateWindow(
 		windowClass.lpszClassName,
 		"KEngine",
 		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		windowRect.right - windowRect.left,
-		windowRect.bottom - windowRect.top,
+        KEngineConstants::WINDOW_X,
+        KEngineConstants::WINDOW_Y,
+        KEngineConstants::WINDOW_WIDTH,
+        KEngineConstants::WINDOW_HEIGHT,
 		nullptr,		// We have no parent window.
 		nullptr,		// We aren't using menus.
 		hInstance,
@@ -94,7 +93,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 
     //Init Renderer
     m_dx12_renderer = new Renderer::DX12Renderer();
-    m_dx12_renderer->SetWindow(m_hwnd, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
+    m_dx12_renderer->SetWindow(m_hwnd, KEngineConstants::WINDOW_X,KEngineConstants::WINDOW_Y, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
     auto& game_director = gameplay::GameDirector::GetGameDirector();
     m_dx12_renderer->Init();
 

@@ -3,7 +3,7 @@
 
 Renderer::DX12Renderer::DX12Renderer():
     IRenderer(),
-    m_viewport(0.0f, 0.0f, static_cast<float>(m_window_width), static_cast<float>(m_window_height)),
+    m_viewport(0, 0.0f, static_cast<float>(m_window_width), static_cast<float>(m_window_height)),
     m_scissorRect(0, 0, static_cast<LONG>(m_window_width), static_cast<LONG>(m_window_height)),
     m_fence_value(),
     m_render_cmd(),
@@ -160,8 +160,8 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         {
             shadow_pso_desc.PS = {};
             shadow_pso_desc.VS = CD3DX12_SHADER_BYTECODE(shadow_map_vs.Get());
-            shadow_pso_desc.RasterizerState.DepthBias = -5;
-            shadow_pso_desc.RasterizerState.SlopeScaledDepthBias = -2.5f;
+            shadow_pso_desc.RasterizerState.DepthBias = 1;
+            shadow_pso_desc.RasterizerState.SlopeScaledDepthBias = -1.5f;
             shadow_pso_desc.NumRenderTargets = 0;
             shadow_pso_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
             shadow_pso_desc.BlendState.IndependentBlendEnable = FALSE;
@@ -210,7 +210,10 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         //Update Shadow Camera Uniform
         memcpy(m_shadow_map_camera_uniform->data + sizeof(float) * 16, &m_scene->m_shadow_camera.GetViewProjMatrix(), sizeof(float) * 16);
         shadow_cmd->SetGraphicsRootConstantBufferView(1, m_shadow_map_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
-        shadow_cmd->RSSetViewports(1, &m_viewport);
+        D3D12_VIEWPORT l_view_port = m_viewport;
+        l_view_port.Width = DEPTH_BUFFER_WIDTH;
+        l_view_port.Height = DEPTH_BUFFER_HEIGHT;
+        shadow_cmd->RSSetViewports(1, &l_view_port);
         shadow_cmd->RSSetScissorRects(1, &m_scissorRect);
         shadow_cmd->ClearDepthStencilView(m_shadow_map->GetDSV().cpu_handle, D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
         shadow_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -301,7 +304,7 @@ void Renderer::DX12Renderer::InitDepthBuffer()
 
     //ToDo:May gain performance using DENY_SHADER_ACCESS.
     m_depth_buffer = std::unique_ptr<DX12DepthBuffer>(new DX12DepthBuffer());
-    m_depth_buffer->Create(L"DepthBuffer", DEPTH_BUFFER_WIDTH, DEPTH_BUFFER_HEIGHT, DEPTH_BUFFER_FORMAT);
+    m_depth_buffer->Create(L"DepthBuffer", m_window_width, m_window_height, DEPTH_BUFFER_FORMAT);
     DX12TransferManager::GetTransferManager().TransitionResource(*m_depth_buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
 
@@ -411,15 +414,19 @@ void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_rend
     }
 }
 
-void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t width, uint32_t height)
+void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
     m_hwnd = hWnd;
     m_window_height = height;
     m_window_width = width;
+    m_window_x_offset = x;
+    m_window_y_offset = y;
     m_viewport.Width = static_cast<float>(width);
     m_viewport.Height = static_cast<float>(height);
     m_scissorRect.right = width;
     m_scissorRect.bottom = height;
+    m_scissorRect.left = 0;
+    m_scissorRect.top = 0;
 }
 void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScene> p_scene)
 {

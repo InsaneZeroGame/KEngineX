@@ -38,13 +38,18 @@ namespace Renderer
         }
 
         virtual void SetCurrentScene(std::shared_ptr<gameplay::GamesScene>) {};
-        virtual void SetWindow(HWND hWnd, uint32_t height, uint32_t width) {};
+        virtual void SetWindow(HWND hWnd,uint32_t x,uint32_t y, uint32_t height, uint32_t width) {};
     protected:
         HWND m_hwnd;
 
+        //Todo:A Rect Structure would be greate.
         uint32_t m_window_height;
 
         uint32_t m_window_width;
+
+        uint32_t m_window_x_offset;
+
+        uint32_t m_window_y_offset;
     };
     
 }

@@ -12,12 +12,12 @@ gameplay::GameDirector::~GameDirector()
 void gameplay::GameDirector::Init()
 {
     m_asset_manager = assetlib::AssetManager::GetAssertManagerPtr();
-    m_asset_manager->LoadScene("simple_scene.obj");
+    m_asset_manager->LoadScene("crytek-sponza.obj");
 }
 
 void gameplay::GameDirector::Update()
 {
-    m_renderer->SetCurrentScene(m_asset_manager->GetScene("simple_scene.obj"));
+    m_renderer->SetCurrentScene(m_asset_manager->GetScene("crytek-sponza.obj"));
 }
 
 void gameplay::GameDirector::Destory()

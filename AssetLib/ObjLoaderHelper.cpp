@@ -24,7 +24,7 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
             KEngineConstants::MODEL_ASSET_DIR.c_str());
         if (!err.empty())
         {
-            assert(0);
+            //assert(0);
         }
 
 
@@ -79,15 +79,27 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
                 l_mesh.m_sub_meshes.push_back(l_sub_mesh);
             }
             uint32_t i = 0;
+            uint32_t j = 0;
             for (auto& vertex : attrib.vertices)
             {
                 vertex_buffer.push_back(vertex);
                 if (i % 3 == 2)
                 {
-                    vertex_buffer.push_back(1.0f);
-                    vertex_buffer.push_back(1.0f);
-                    vertex_buffer.push_back(1.0f);
-                    vertex_buffer.push_back(1.0f);
+                    if (j >= attrib.normals.size())
+                    {
+                        vertex_buffer.push_back(0.0f);
+                        vertex_buffer.push_back(0.0f);
+                        vertex_buffer.push_back(0.0f);
+                        vertex_buffer.push_back(1.0f);
+                    }
+                    else
+                    {
+                        vertex_buffer.push_back(attrib.normals[j + 0]);
+                        vertex_buffer.push_back(attrib.normals[j + 1]);
+                        vertex_buffer.push_back(attrib.normals[j + 2]);
+                        vertex_buffer.push_back(1.0f);
+                    }
+                    j += 3;
                 }
                 ++i;
             }
@@ -100,12 +112,12 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
 
 
     //Setup Main Camera
-    Vector3 eye = Vector3(-5.0f, 5.0f, -10.0f);
-    Vector3 at  = Vector3(0.0f, 0.0f, 0.0f);
+    Vector3 eye = Vector3(200.0f, 250.0f, 200.0f);
+    Vector3 at  = Vector3(0.0f, 250.0f, 0.0f);
     Vector3 up  = Vector3(0.0f,1.0f,0.0f);
 
     l_scene->m_main_camera.SetEyeAtUp(eye, at, up);
-    l_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f,600.0f/800.0f,5.5f, 20.0f);
+    l_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f,600.0f/800.0f,5.5f, 1200.0f);
     l_scene->m_main_camera.Update();
 
     //Setup Shadow Camera
@@ -114,7 +126,7 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
     up = Vector3(0.0f, 1.0f, 0.0f);
 
     l_scene->m_shadow_camera.SetEyeAtUp(eye, at, up);
-    l_scene->m_shadow_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 7.5f, 25.0f);
+    l_scene->m_shadow_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 7.5f, 250.0f);
     l_scene->m_shadow_camera.Update();
 
     return l_scene;

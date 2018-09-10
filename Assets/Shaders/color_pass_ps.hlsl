@@ -70,5 +70,5 @@ float4 main(PSInput input) : SV_TARGET
 {
     //float shadow = shadow_map.SampleCmpLevelZero(shadow_sampler,input.shadow_coord.xy,input.shadow_coord.z);
     float shadow = pcf(input.shadow_coord);
-    return shadow * (input.color * 0.75) + float4(0.25, 0.25, 0.25, 0.25) * input.color;
+    return (input.color * 0.75) + float4(0.25, 0.25, 0.25, 0.25) * input.color;
 }

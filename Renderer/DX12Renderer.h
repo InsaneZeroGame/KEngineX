@@ -68,10 +68,10 @@ namespace Renderer {
             CAMERA_UNIFORM_SIZE = 256 //192 byte per buffer(3 buffers),256 for device alignment
         };
         enum {
-            DEPTH_BUFFER_WIDTH = 800
+            DEPTH_BUFFER_WIDTH = 1920
         };
         enum {
-            DEPTH_BUFFER_HEIGHT = 600
+            DEPTH_BUFFER_HEIGHT = 1080
         };
 
         const DXGI_FORMAT DEPTH_BUFFER_FORMAT = DXGI_FORMAT::DXGI_FORMAT_D16_UNORM;

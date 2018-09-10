@@ -160,8 +160,10 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         {
             shadow_pso_desc.PS = {};
             shadow_pso_desc.VS = CD3DX12_SHADER_BYTECODE(shadow_map_vs.Get());
-            shadow_pso_desc.RasterizerState.DepthBias = 1;
-            shadow_pso_desc.RasterizerState.SlopeScaledDepthBias = -1.5f;
+            shadow_pso_desc.RasterizerState.DepthBias = -10;
+            shadow_pso_desc.RasterizerState.SlopeScaledDepthBias = -2.5f;
+            shadow_pso_desc.RasterizerState.DepthBiasClamp = 0.0f;
+            shadow_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
             shadow_pso_desc.NumRenderTargets = 0;
             shadow_pso_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
             shadow_pso_desc.BlendState.IndependentBlendEnable = FALSE;

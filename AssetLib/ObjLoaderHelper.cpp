@@ -3,7 +3,7 @@
 #include "ObjLoaderHelper.h"
 #include <cassert>
 #include <EngineConfig.h>
-
+#include <unordered_map>
 
 
 std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_file_name)
@@ -33,19 +33,16 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
             assert(0);
         }
 
-        //printf("# of vertices  = %d\n", (int)(attrib.vertices.size()) / 3);
-        //printf("# of normals   = %d\n", (int)(attrib.normals.size()) / 3);
-        //printf("# of texcoords = %d\n", (int)(attrib.texcoords.size()) / 2);
-        //printf("# of materials = %d\n", (int)materials.size());
-        //printf("# of shapes    = %d\n", (int)shapes.size());
-
-        auto l_material = std::shared_ptr< GameMeterial>(new GameMeterial());
-
-
+        
         {
             //Map Shapes to Engine GameMesh
             std::vector<float> vertex_buffer;
-            GameMesh l_mesh;
+            std::unique_ptr<GameMesh> l_mesh = std::unique_ptr<GameMesh>(new GameMesh);
+            for (auto& material : materials)
+            {
+                l_mesh->m_texture_names.push_back(material.diffuse_texname);
+            }
+
             for (size_t s = 0; s < shapes.size(); s++)
             {
                 //Pershape mapped to GameSubMesh
@@ -75,8 +72,10 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
                 l_sub_mesh.m_diffuse[1] = materials[material_id].diffuse[1];
                 l_sub_mesh.m_diffuse[2] = materials[material_id].diffuse[2];
                 l_sub_mesh.m_diffuse[3] = 1.0f;
+                l_sub_mesh.m_texture_id = material_id;
+                l_mesh->m_texture_map.insert(std::pair<std::string, int32_t>(std::string(materials[material_id].diffuse_texname),static_cast<int32_t>(l_mesh->m_sub_meshes.size())));
+                l_mesh->m_sub_meshes.push_back(l_sub_mesh);
 
-                l_mesh.m_sub_meshes.push_back(l_sub_mesh);
             }
             uint32_t i = 0;
             uint32_t j = 0;
@@ -103,11 +102,9 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
                 }
                 ++i;
             }
-            l_mesh.m_vertices = vertex_buffer;
-            l_material->m_meshes.push_back(l_mesh);
-
+            l_mesh->m_vertices = vertex_buffer;
+            l_scene->dummy_actor->AddMesh(std::move(l_mesh));
         }
-        l_scene->dummy_actor->AddMaterial(l_material);
     }
 
 

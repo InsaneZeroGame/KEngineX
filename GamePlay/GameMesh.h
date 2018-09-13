@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <array>
+#include <unordered_map>
 
 namespace gameplay
 {
@@ -25,6 +26,8 @@ namespace gameplay
         std::array<float, 4> m_diffuse;
 
         uint32_t m_index_count = 0;
+
+        uint32_t m_texture_id = 0;
 
         void ReleaseMeshData();
     };
@@ -52,24 +55,11 @@ namespace gameplay
 
         std::vector<GameSubMesh> m_sub_meshes;
 
+        std::unordered_multimap<std::string, int32_t> m_texture_map;
+
+        std::vector<std::string> m_texture_names;
         //It's called once data has been uploaded to GPU'S vram.
         void ReleaseMeshData();
         
     };//class GameMesh
-
-
-
-    struct GameMeterial
-    {
-        //Material has multiple meshes shares the same material(diffuse,specular...)
-    public:
-        GameMeterial();
-
-        ~GameMeterial();
-
-        std::vector<GameMesh> m_meshes;
-    };//Class GameMaterial 
-
-
-    
 }//namespace gameplay

@@ -62,7 +62,7 @@ namespace Renderer
 
     private:
 
-        enum { DESCRIPTOR_HANDLE_MAX_NUM = 20 };
+        enum { DESCRIPTOR_HANDLE_MAX_NUM = 50 };
         enum { DESCRIPTOR_TYPE_NUM = 5 };
         enum { FENCE_WAIT_TIME_INFINITY = 0xffffffffffffffff};
 

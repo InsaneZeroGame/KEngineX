@@ -1,5 +1,5 @@
 #include "GameMesh.h"
-
+#include <EngineConfig.h>
 
 namespace gameplay
 {
@@ -7,15 +7,22 @@ namespace gameplay
     //Game Mesh contains Vertices.
     GameMesh::GameMesh()
        :m_vertices({}),
-        m_sub_meshes({})
+        m_sub_meshes({}),
+        m_texture_names({})
     {
+        //Add a default texture.
+        m_texture_map.insert(std::pair<std::string, uint32_t>(KEngineConstants::DEFAULT_TEXTURE_NAME,-1));
+        m_texture_names.push_back(KEngineConstants::DEFAULT_TEXTURE_NAME);
     }
 
     GameMesh::GameMesh(std::vector<float> p_vertices)
         :m_vertices(p_vertices),
-        m_sub_meshes({})
+        m_sub_meshes({}),
+        m_texture_names({})
     {
-    
+        //Add a default texture.
+        m_texture_map.insert(std::pair<std::string, uint32_t>(KEngineConstants::DEFAULT_TEXTURE_NAME, -1));
+        m_texture_names.push_back(KEngineConstants::DEFAULT_TEXTURE_NAME);
     }
 
     void GameMesh::ReleaseMeshData()
@@ -34,14 +41,7 @@ namespace gameplay
     {
     }
     
-    //Game Materials
-    GameMeterial::GameMeterial():
-        m_meshes({})
-    {
-    }
-    GameMeterial::~GameMeterial()
-    {
-    }
+   
     GameSubMesh::GameSubMesh():
         m_indices({})
     {

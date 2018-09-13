@@ -1,9 +1,12 @@
 #pragma once
 #include "SceneNode.h"
 #include "GameMesh.h"
+#include <unordered_map>
 
 namespace gameplay
 {
+    using TextureId = uint32_t;
+
     class GameActor : public SceneNode
     {
     public:
@@ -11,8 +14,11 @@ namespace gameplay
 
         virtual ~GameActor();
 
-        void AddMaterial(std::shared_ptr<GameMeterial> p_mesh);
-        
-        std::vector<std::shared_ptr<GameMeterial>> m_meterial;
+        std::unique_ptr<GameMesh> m_mesh;
+
+        __forceinline void AddMesh(std::unique_ptr<GameMesh> p_mesh)
+        {
+            m_mesh = std::forward<std::unique_ptr<GameMesh>>(p_mesh);
+        }
     };
 }

@@ -20,6 +20,7 @@
 SamplerComparisonState shadow_sampler : register(s0);
 
 Texture2D<float> shadow_map : register(t0);
+Texture2D<float> diffuse : register(t1);
 
 float pcf(float3 shadow_coord)
 {
@@ -65,6 +66,10 @@ float pcf(float3 shadow_coord)
 //    }
 //    return shadow / 25;
 //}
+
+
+
+
 
 float4 main(PSInput input) : SV_TARGET
 {

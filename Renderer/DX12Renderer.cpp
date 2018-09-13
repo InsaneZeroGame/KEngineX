@@ -1,5 +1,9 @@
 #include "DX12Renderer.h"
 #include "DXSampleHelper.h"
+#include <future>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 
 Renderer::DX12Renderer::DX12Renderer():
     IRenderer(),
@@ -247,7 +251,8 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         ID3D12DescriptorHeap* l_heaps[] = { m_device->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).Get() };
 
         current_render_cmd->SetDescriptorHeaps(1, l_heaps);
-        current_render_cmd->SetGraphicsRootDescriptorTable(2, m_shadow_map->GetDepthSRV().gpu_handle);
+        //current_render_cmd->SetGraphicsRootDescriptorTable(2, m_shadow_map->GetDepthSRV().gpu_handle);
+        current_render_cmd->SetGraphicsRootDescriptorTable(2, m_dummy_actor_textures["textures\\background.png"].get()->GetSRV().gpu_handle);
         current_render_cmd->RSSetViewports(1, &m_viewport);
         current_render_cmd->RSSetScissorRects(1, &m_scissorRect);
 
@@ -348,17 +353,43 @@ void Renderer::DX12Renderer::InitRootSignature()
         shadow_map_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         shadow_map_desc_range.RegisterSpace = 0;
 
+        
+
         std::vector<D3D12_DESCRIPTOR_RANGE> ranges = 
         {
-            shadow_map_desc_range,
+            shadow_map_desc_range
         };
         l_desc_table_parameter.DescriptorTable.NumDescriptorRanges = ranges.size();
         l_desc_table_parameter.DescriptorTable.pDescriptorRanges = ranges.data();
+
+
+        D3D12_ROOT_PARAMETER l_temp_diffuse_desc_table_parameter = {};
+        l_temp_diffuse_desc_table_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        l_temp_diffuse_desc_table_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+
+        D3D12_DESCRIPTOR_RANGE diffuse_desc_range;
+
+        diffuse_desc_range.BaseShaderRegister = 1;
+        diffuse_desc_range.NumDescriptors = 1;
+        diffuse_desc_range.OffsetInDescriptorsFromTableStart = 0;
+        diffuse_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        diffuse_desc_range.RegisterSpace = 1;
+
+        std::vector<D3D12_DESCRIPTOR_RANGE> diffuse_ranges =
+        {
+            diffuse_desc_range
+        };
+
+
+        l_temp_diffuse_desc_table_parameter.DescriptorTable.NumDescriptorRanges = diffuse_ranges.size();
+        l_temp_diffuse_desc_table_parameter.DescriptorTable.pDescriptorRanges = diffuse_ranges.data();
 
         std::vector<D3D12_ROOT_PARAMETER> l_parameters = {
             l_material_parameter,
             l_camera_parameter, 
             l_desc_table_parameter,
+            l_temp_diffuse_desc_table_parameter,
         };
 
 
@@ -389,29 +420,25 @@ void Renderer::DX12Renderer::InitRootSignature()
 void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_render_cmd)
 {
     //float diffuse[4] = {0.25f,0.75f,0.55f,1.0f};
-    for (auto& material : m_scene->dummy_actor->m_meterial)
     {
-        for (auto& mesh : material->m_meshes)
+        D3D12_VERTEX_BUFFER_VIEW l_mesh_desc = {};
+        l_mesh_desc.BufferLocation = m_scene->dummy_actor->m_mesh->m_vertex_buffer_desc.BufferLocation;
+        l_mesh_desc.SizeInBytes = m_scene->dummy_actor->m_mesh->m_vertex_buffer_desc.SizeInBytes;
+        l_mesh_desc.StrideInBytes = m_scene->dummy_actor->m_mesh->m_vertex_buffer_desc.StrideInBytes;
+
+        current_render_cmd->IASetVertexBuffers(0, 1, &l_mesh_desc);
+
+
+        for (auto & submesh : m_scene->dummy_actor->m_mesh->m_sub_meshes)
         {
-            D3D12_VERTEX_BUFFER_VIEW l_mesh_desc = {};
-            l_mesh_desc.BufferLocation = mesh.m_vertex_buffer_desc.BufferLocation;
-            l_mesh_desc.SizeInBytes = mesh.m_vertex_buffer_desc.SizeInBytes;
-            l_mesh_desc.StrideInBytes = mesh.m_vertex_buffer_desc.StrideInBytes;
+            current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, submesh.m_diffuse.data(), 0);
 
-            current_render_cmd->IASetVertexBuffers(0, 1, &l_mesh_desc);
-
-
-            for (auto & submesh : mesh.m_sub_meshes)
-            {
-                current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, submesh.m_diffuse.data(), 0);
-
-                D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
-                l_sub_mesh_desc.BufferLocation = submesh.m_index_buffer_desc.BufferLocation;
-                l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
-                l_sub_mesh_desc.SizeInBytes = submesh.m_index_buffer_desc.SizeInBytes;
-                current_render_cmd->IASetIndexBuffer(&l_sub_mesh_desc);
-                current_render_cmd->DrawIndexedInstanced(submesh.m_index_count, 1, 0, 0, 0);
-            }
+            D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
+            l_sub_mesh_desc.BufferLocation = submesh.m_index_buffer_desc.BufferLocation;
+            l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
+            l_sub_mesh_desc.SizeInBytes = submesh.m_index_buffer_desc.SizeInBytes;
+            current_render_cmd->IASetIndexBuffer(&l_sub_mesh_desc);
+            current_render_cmd->DrawIndexedInstanced(submesh.m_index_count, 1, 0, 0, 0);
         }
     }
 }
@@ -438,9 +465,22 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
         m_scene.reset();
     }
     m_scene = p_scene;
-}
-;
 
+    for (auto & l_texture_name_to_load : p_scene->dummy_actor->m_mesh->m_texture_names)
+    {
+
+        if (l_texture_name_to_load == KEngineConstants::DEFAULT_TEXTURE_NAME) continue;
+        int w, h, comp;
+        unsigned char* image = stbi_load((KEngineConstants::ASSET_DIR + l_texture_name_to_load).c_str(), &w, &h, &comp, STBI_rgb_alpha);
+        if (!image) continue;
+        DX12Texture* l_texture = new DX12Texture;
+        l_texture->Create(1,w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
+        m_dummy_actor_textures.insert(std::pair<std::string, std::unique_ptr<DX12Texture>>(l_texture_name_to_load,std::unique_ptr<DX12Texture>(l_texture)));
+
+    }
+
+
+}
 
 
 void Renderer::DX12Renderer::Update()

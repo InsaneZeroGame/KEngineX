@@ -1,4 +1,5 @@
 #include "GameDirector.h"
+#include <future>
 
 gameplay::GameDirector::GameDirector()
 {
@@ -12,7 +13,9 @@ gameplay::GameDirector::~GameDirector()
 void gameplay::GameDirector::Init()
 {
     m_asset_manager = assetlib::AssetManager::GetAssertManagerPtr();
-    m_asset_manager->LoadScene("crytek-sponza.obj");
+
+    auto res = std::async(std::launch::async,&assetlib::AssetManager::LoadScene,m_asset_manager, "crytek-sponza.obj");
+    //m_asset_manager->LoadScene("crytek-sponza.obj");
 }
 
 void gameplay::GameDirector::Update()

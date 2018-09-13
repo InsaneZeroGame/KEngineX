@@ -12,6 +12,7 @@ Renderer::DX12TransferManager::DX12TransferManager() :
 void Renderer::DX12TransferManager::InitBuffers()
 {
     m_upload_buffer = std::unique_ptr<UniformBuffer>(new UniformBuffer(KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE));
+    m_texture_upload_buffer = std::unique_ptr<UniformBuffer>(new UniformBuffer(KEngineConstants::TEXTURE_UPLOAD_BUFFER_SIZE_IN_BYTE));
     m_vertex_buffer = std::unique_ptr<VertexIndexBuffer>(new VertexIndexBuffer(KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE));
 }
 
@@ -90,6 +91,9 @@ void Renderer::DX12TransferManager::DoOneJob(TransferJob* p_job)
     case TransferJob::JobType::UPLOAD_VERTEX_BUFFER:
         UploadDataToVertexBuffer(p_job);  
         break;
+    case TransferJob::JobType::UPLOAD_TEXTURE:
+        UploadTexture(p_job);
+        break;
     default:
         break;
     }
@@ -101,6 +105,22 @@ void Renderer::DX12TransferManager::UploadDataToVertexBuffer(TransferJob* p_job)
     memcpy(m_upload_buffer->data + m_vertex_buffer->offset, p_job->data, p_job->data_size);
     p_job->gpu_va_address = m_vertex_buffer->GetGpuVirtualAddress() + m_vertex_buffer->offset;
     m_vertex_buffer->offset += p_job->data_size;
+}
+
+void Renderer::DX12TransferManager::UploadTexture(TransferJob * p_job)
+{
+    //system memry data to upload buffer
+    m_UploadCommandList->Reset();
+    D3D12_SUBRESOURCE_DATA texResource;
+    texResource.pData = p_job->data;
+    texResource.RowPitch = p_job->RowPitch;
+    texResource.SlicePitch = p_job->SlicePitch;
+    memcpy(m_texture_upload_buffer->data, p_job->data, p_job->data_size);
+
+    //upload buffer to texture resource
+    UpdateSubresources(m_UploadCommandList->GetDX12CmdList(), p_job->dest_res->GetResource(), m_texture_upload_buffer->GetResource(), 0, 0, 1, &texResource);
+    m_UploadCommandList->Flush();
+    TransitionResource(*p_job->dest_res, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
 
 void Renderer::DX12TransferManager::BeginResourceTransition(DX12GpuResource& Resource, D3D12_RESOURCE_STATES NewState, bool FlushImmediate,D3D12_COMMAND_LIST_TYPE p_type)

@@ -1,5 +1,7 @@
 #include "AssetManager.h"
 #include "ObjLoaderHelper.h"
+#include <DX12Texture.h>
+
 
 assetlib::AssetManager::AssetManager()
 {
@@ -84,44 +86,39 @@ void assetlib::AssetManager::LoadScene(const std::string & p_name)
         };
         // Define the geometry for a triangle.
 
-        for (auto& material : l_scene->dummy_actor->m_meterial)
+        const uint64_t vertexBufferSize = static_cast<uint64_t>(l_scene->dummy_actor->m_mesh->m_vertices.size()) * sizeof(float);
+
+
+        TransferJob l_vertex_upload_job = {};
+        l_vertex_upload_job.data = l_scene->dummy_actor->m_mesh->m_vertices.data();
+        l_vertex_upload_job.data_size = vertexBufferSize;
+        l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
+
+        DX12TransferManager::GetTransferManager().AddTransferJob(&l_vertex_upload_job, true);
+        // Initialize the vertex buffer view.
+        l_scene->dummy_actor->m_mesh->m_vertex_buffer_desc.BufferLocation = l_vertex_upload_job.gpu_va_address;
+        l_scene->dummy_actor->m_mesh->m_vertex_buffer_desc.StrideInBytes = sizeof(Vertex);
+        l_scene->dummy_actor->m_mesh->m_vertex_buffer_desc.SizeInBytes = static_cast<uint32_t>(vertexBufferSize);
+
+        
+        for (auto & submesh : l_scene->dummy_actor->m_mesh->m_sub_meshes)
         {
-            for (auto& mesh : material->m_meshes)
-            {
-                const uint64_t vertexBufferSize = static_cast<uint64_t>(mesh.m_vertices.size()) * sizeof(float);
+            TransferJob l_submesh_upload_job = {};
+            l_submesh_upload_job.data = submesh.m_indices.data();
+            l_submesh_upload_job.data_size = sizeof(uint32_t) * submesh.m_indices.size();
+            l_submesh_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
 
-
-                TransferJob l_vertex_upload_job = {};
-                l_vertex_upload_job.data = mesh.m_vertices.data();
-                l_vertex_upload_job.data_size = vertexBufferSize;
-                l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
-
-                DX12TransferManager::GetTransferManager().AddTransferJob(&l_vertex_upload_job, true);
-                // Initialize the vertex buffer view.
-                mesh.m_vertex_buffer_desc.BufferLocation = l_vertex_upload_job.gpu_va_address;
-                mesh.m_vertex_buffer_desc.StrideInBytes = sizeof(Vertex);
-                mesh.m_vertex_buffer_desc.SizeInBytes = static_cast<uint32_t>(vertexBufferSize);
-
-                for (auto & submesh : mesh.m_sub_meshes)
-                {
-                    TransferJob l_submesh_upload_job = {};
-                    l_submesh_upload_job.data = submesh.m_indices.data();
-                    l_submesh_upload_job.data_size = sizeof(uint32_t) * submesh.m_indices.size();
-                    l_submesh_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX_BUFFER;
-
-                    DX12TransferManager::GetTransferManager().AddTransferJob(&l_submesh_upload_job, true);
-                    // Initialize the Index buffer view.
-                    submesh.m_index_buffer_desc.BufferLocation = l_submesh_upload_job.gpu_va_address;
-                    submesh.m_index_buffer_desc.StrideInBytes = sizeof(uint32_t);
-                    submesh.m_index_buffer_desc.SizeInBytes = static_cast<uint32_t>(l_submesh_upload_job.data_size);
-                }
-
-                //Release system memory used by vertices and indices.
-                //They are useless now since we don't readback or reuse it.
-                mesh.ReleaseMeshData();
-
-            }
+            DX12TransferManager::GetTransferManager().AddTransferJob(&l_submesh_upload_job, true);
+            // Initialize the Index buffer view.
+            submesh.m_index_buffer_desc.BufferLocation = l_submesh_upload_job.gpu_va_address;
+            submesh.m_index_buffer_desc.StrideInBytes = sizeof(uint32_t);
+            submesh.m_index_buffer_desc.SizeInBytes = static_cast<uint32_t>(l_submesh_upload_job.data_size);
         }
+
+        //Release system memory used by vertices and indices.
+        //They are useless now since we don't readback or reuse it.
+        l_scene->dummy_actor->m_mesh->ReleaseMeshData();
+
         DX12TransferManager::GetTransferManager().PrepareToRender();
     }
 

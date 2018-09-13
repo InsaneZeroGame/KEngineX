@@ -21,15 +21,19 @@ namespace Renderer
         typedef enum JobType
         {
             UPLOAD_VERTEX_BUFFER,
+            UPLOAD_TEXTURE,
         }Jobtype;
 
         JobType type;
-        void* data;
+        const void* data;
         uint64_t data_size;
         bool job_done;
         bool retain;
         uint64_t gpu_va_address;
-
+        //For Texture Transfer
+        uint64_t RowPitch;
+        uint64_t SlicePitch;
+        DX12GpuResource* dest_res;
     };
 
     class DX12TransferManager final : public KFramework::INoCopy
@@ -66,7 +70,11 @@ namespace Renderer
         DX12TransferManager();
         DX12GpuDevice* m_device;
         std::unique_ptr<VertexIndexBuffer> m_vertex_buffer;
+        
         std::unique_ptr<UniformBuffer> m_upload_buffer;
+        
+        std::unique_ptr<UniformBuffer> m_texture_upload_buffer;
+
         D3D12_RESOURCE_BARRIER m_ResourceBarrierBuffer[16];
         UINT m_NumBarriersToFlush;
         std::unique_ptr<DX12RenderCommndBuffer> m_CommandList;
@@ -81,5 +89,6 @@ namespace Renderer
         void FlushResourceBarriers(void);
         void DoOneJob(TransferJob*);
         void UploadDataToVertexBuffer(TransferJob* p_job);
+        void UploadTexture(TransferJob* p_job);
     };//DX12UploadManager
 }//Renderer

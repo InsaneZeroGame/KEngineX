@@ -128,15 +128,17 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         UINT compileFlags = 0;
 #endif
 
-        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
-        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shadow_map_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_0", compileFlags, 0, &shadow_map_vs, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &vertexShader, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compileFlags, 0, &pixelShader, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shadow_map_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &shadow_map_vs, nullptr));
 
         // Define the vertex input layout.
         std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs =
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+            { "TEXTURECOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+
         };
 
 
@@ -251,8 +253,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         ID3D12DescriptorHeap* l_heaps[] = { m_device->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).Get() };
 
         current_render_cmd->SetDescriptorHeaps(1, l_heaps);
-        //current_render_cmd->SetGraphicsRootDescriptorTable(2, m_shadow_map->GetDepthSRV().gpu_handle);
-        current_render_cmd->SetGraphicsRootDescriptorTable(2, m_dummy_actor_textures["textures\\background.png"].get()->GetSRV().gpu_handle);
+        current_render_cmd->SetGraphicsRootDescriptorTable(3, m_shadow_map->GetDepthSRV().gpu_handle);
         current_render_cmd->RSSetViewports(1, &m_viewport);
         current_render_cmd->RSSetScissorRects(1, &m_scissorRect);
 
@@ -330,12 +331,22 @@ void Renderer::DX12Renderer::InitRootSignature()
         l_material_parameter.Constants.RegisterSpace = 0;
         l_material_parameter.Constants.ShaderRegister = 0;
 
+       
         //Camera Uniform (Constant Buffer View)
         D3D12_ROOT_PARAMETER l_camera_parameter = {};
         l_camera_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
         l_camera_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
         l_camera_parameter.Descriptor.RegisterSpace = 0;
         l_camera_parameter.Descriptor.ShaderRegister = 1;
+
+        //Texture DescHeap Index.
+        D3D12_ROOT_PARAMETER l_texture_id_parameter = {};
+        l_texture_id_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        l_texture_id_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        l_texture_id_parameter.Constants.Num32BitValues = 1;
+        l_texture_id_parameter.Constants.RegisterSpace = 0;
+        l_texture_id_parameter.Constants.ShaderRegister = 2;
+
 
         
 
@@ -353,46 +364,32 @@ void Renderer::DX12Renderer::InitRootSignature()
         shadow_map_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         shadow_map_desc_range.RegisterSpace = 0;
 
+        D3D12_DESCRIPTOR_RANGE diffuse_desc_range;
+
+        diffuse_desc_range.BaseShaderRegister = 1;
+        //all srv except Shadow map 
+        diffuse_desc_range.NumDescriptors = DX12GpuDevice::DESCRIPTOR_HANDLE_MAX_NUM - 1;
+        diffuse_desc_range.OffsetInDescriptorsFromTableStart = 0;
+        diffuse_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+        diffuse_desc_range.RegisterSpace = 0;
+
         
 
         std::vector<D3D12_DESCRIPTOR_RANGE> ranges = 
         {
-            shadow_map_desc_range
+            shadow_map_desc_range,
+            diffuse_desc_range
         };
         l_desc_table_parameter.DescriptorTable.NumDescriptorRanges = ranges.size();
         l_desc_table_parameter.DescriptorTable.pDescriptorRanges = ranges.data();
 
 
-        D3D12_ROOT_PARAMETER l_temp_diffuse_desc_table_parameter = {};
-        l_temp_diffuse_desc_table_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-        l_temp_diffuse_desc_table_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
-
-
-        D3D12_DESCRIPTOR_RANGE diffuse_desc_range;
-
-        diffuse_desc_range.BaseShaderRegister = 1;
-        diffuse_desc_range.NumDescriptors = 1;
-        diffuse_desc_range.OffsetInDescriptorsFromTableStart = 0;
-        diffuse_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-        diffuse_desc_range.RegisterSpace = 1;
-
-        std::vector<D3D12_DESCRIPTOR_RANGE> diffuse_ranges =
-        {
-            diffuse_desc_range
-        };
-
-
-        l_temp_diffuse_desc_table_parameter.DescriptorTable.NumDescriptorRanges = diffuse_ranges.size();
-        l_temp_diffuse_desc_table_parameter.DescriptorTable.pDescriptorRanges = diffuse_ranges.data();
-
         std::vector<D3D12_ROOT_PARAMETER> l_parameters = {
             l_material_parameter,
             l_camera_parameter, 
+            l_texture_id_parameter,
             l_desc_table_parameter,
-            l_temp_diffuse_desc_table_parameter,
         };
-
-
 
         D3D12_STATIC_SAMPLER_DESC l_shadow_sampler = {};
         l_shadow_sampler.Filter = D3D12_FILTER_COMPARISON_MIN_MAG_LINEAR_MIP_POINT;
@@ -403,9 +400,22 @@ void Renderer::DX12Renderer::InitRootSignature()
         l_shadow_sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         l_shadow_sampler.RegisterSpace = 0;
         l_shadow_sampler.ShaderRegister = 0;
+
+
+        D3D12_STATIC_SAMPLER_DESC l_default_sampler = {};
+        l_default_sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+        l_default_sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        l_default_sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        l_default_sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        l_default_sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+        l_default_sampler.RegisterSpace = 0;
+        l_default_sampler.ShaderRegister = 1;
+
+
         std::vector<D3D12_STATIC_SAMPLER_DESC> l_static_samplers = 
         {
-            l_shadow_sampler
+            l_shadow_sampler,
+            l_default_sampler
         };
 
         rootSignatureDesc.Init(l_parameters.size(), l_parameters.data(),l_static_samplers.size(),l_static_samplers.data());
@@ -432,7 +442,8 @@ void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_rend
         for (auto & submesh : m_scene->dummy_actor->m_mesh->m_sub_meshes)
         {
             current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, submesh.m_diffuse.data(), 0);
-
+            int texture_id = m_dummy_actor_textures[m_scene->dummy_actor->m_mesh->m_texture_names[submesh.m_texture_id]]->m_descriptor_heap_index;
+            current_render_cmd->SetGraphicsRoot32BitConstant(2, texture_id, 0);
             D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
             l_sub_mesh_desc.BufferLocation = submesh.m_index_buffer_desc.BufferLocation;
             l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
@@ -468,15 +479,30 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
 
     for (auto & l_texture_name_to_load : p_scene->dummy_actor->m_mesh->m_texture_names)
     {
-
+        //Skip if default texture
         if (l_texture_name_to_load == KEngineConstants::DEFAULT_TEXTURE_NAME) continue;
+        //Skip if texture loaded already.
+        if (m_dummy_actor_textures.find(l_texture_name_to_load) != m_dummy_actor_textures.end()) continue;
         int w, h, comp;
         unsigned char* image = stbi_load((KEngineConstants::ASSET_DIR + l_texture_name_to_load).c_str(), &w, &h, &comp, STBI_rgb_alpha);
-        if (!image) continue;
-        DX12Texture* l_texture = new DX12Texture;
-        l_texture->Create(1,w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
-        m_dummy_actor_textures.insert(std::pair<std::string, std::unique_ptr<DX12Texture>>(l_texture_name_to_load,std::unique_ptr<DX12Texture>(l_texture)));
+        
+        uint8_t black_image[4] = {0,0,0,0};
 
+        //If texture not found,leave it as 1x1 black image.
+        if (!image)
+        {
+            DX12Texture* l_texture = new DX12Texture;
+            l_texture->Create(1, 1, 1, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, black_image);
+            m_dummy_actor_textures.insert(std::pair<std::string, std::unique_ptr<DX12Texture>>(l_texture_name_to_load, std::unique_ptr<DX12Texture>(l_texture)));
+        }
+        else
+        {
+            DX12Texture* l_texture = new DX12Texture;
+            l_texture->Create(1, w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
+            m_dummy_actor_textures.insert(std::pair<std::string, std::unique_ptr<DX12Texture>>(l_texture_name_to_load, std::unique_ptr<DX12Texture>(l_texture)));
+
+        }
+       
     }
 
 

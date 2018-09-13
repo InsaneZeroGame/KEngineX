@@ -65,6 +65,8 @@ namespace Renderer
 
         D3D12_GPU_VIRTUAL_ADDRESS GetGpuVirtualAddress() const { return m_GpuVirtualAddress; }
 
+        uint32_t m_descriptor_heap_index = 0;
+
     protected:
 
         Microsoft::WRL::ComPtr<ID3D12Resource> m_pResource;

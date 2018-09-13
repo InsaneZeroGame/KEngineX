@@ -121,9 +121,15 @@ void Renderer::DX12GpuDevice::FlushCmd(ID3D12CommandList** pp_cmd, uint32_t coun
     WaitForGPU();
 }
 
-Renderer::DescriptorHandle Renderer::DX12GpuDevice::GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type)
+Renderer::DescriptorHandle Renderer::DX12GpuDevice::GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type,uint32_t* index)
 {
     assert(m_desc_heaps_handle_count[p_type] <= DESCRIPTOR_HANDLE_MAX_NUM && "Handle Num Exceeds max num");
+
+    if (index)
+    {
+        *index = m_desc_heaps_handle_count[p_type];
+    }
+
     DescriptorHandle l_handle = {};
     l_handle.cpu_handle.ptr = m_desc_heaps[p_type]->GetCPUDescriptorHandleForHeapStart().ptr + m_device->GetDescriptorHandleIncrementSize(p_type) * m_desc_heaps_handle_count[p_type];
     l_handle.gpu_handle.ptr = m_desc_heaps[p_type]->GetGPUDescriptorHandleForHeapStart().ptr + m_device->GetDescriptorHandleIncrementSize(p_type) * m_desc_heaps_handle_count[p_type];

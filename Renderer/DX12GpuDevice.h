@@ -48,12 +48,15 @@ namespace Renderer
         void FlushCmd(ID3D12CommandList** p_cmd,uint32_t count);
 
         
-        DescriptorHandle GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type);
+        DescriptorHandle GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE p_type,uint32_t* index = nullptr);
        
         __forceinline Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE p_type)
         {
             return m_desc_heaps[p_type];
         }
+
+        enum { DESCRIPTOR_HANDLE_MAX_NUM = 50 };
+
 
         ~DX12GpuDevice();
     private:
@@ -62,7 +65,6 @@ namespace Renderer
 
     private:
 
-        enum { DESCRIPTOR_HANDLE_MAX_NUM = 50 };
         enum { DESCRIPTOR_TYPE_NUM = 5 };
         enum { FENCE_WAIT_TIME_INFINITY = 0xffffffffffffffff};
 

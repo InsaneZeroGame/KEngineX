@@ -27,7 +27,7 @@ cbuffer MVP: register(b1)
 
 
 
-PSInput main(float3 position : POSITION, float4 color : COLOR)
+PSInput main(float3 position : POSITION, float4 color : COLOR,float2 texture_coord : TEXTURECOORD)
 {
 	PSInput result;
 
@@ -35,7 +35,7 @@ PSInput main(float3 position : POSITION, float4 color : COLOR)
 	result.color = color;
     float4 shadow_coord = mul(modelToShadow, float4(position, 1.0f));
     result.shadow_coord = shadow_coord.xyz / shadow_coord.w;
-
+    result.texture_coord = texture_coord;
 	return result;
 }
 

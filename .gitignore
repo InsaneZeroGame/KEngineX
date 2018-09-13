@@ -36,3 +36,4 @@ Assets/Models/*
 ThirdParty/libs/*
 Renderer/DXSampleHelper.h
 Framework/EngineConfig.h
+/Assets/textures

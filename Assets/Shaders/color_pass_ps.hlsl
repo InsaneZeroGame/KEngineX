@@ -16,11 +16,17 @@
 #define PCF_SAMPLE_NUM 16;
 #pragma warning (disable: 3078)
 
+cbuffer myTextureID : register(b2)
+{
+    int myTextureId;
+};
+
 
 SamplerComparisonState shadow_sampler : register(s0);
+SamplerState default_sampler : register(s1);
 
 Texture2D<float> shadow_map : register(t0);
-Texture2D<float> diffuse : register(t1);
+Texture2D mesh_diffuse[49] : register(t1);
 
 float pcf(float3 shadow_coord)
 {
@@ -75,5 +81,7 @@ float4 main(PSInput input) : SV_TARGET
 {
     //float shadow = shadow_map.SampleCmpLevelZero(shadow_sampler,input.shadow_coord.xy,input.shadow_coord.z);
     float shadow = pcf(input.shadow_coord);
-    return (input.color * 0.75) + float4(0.25, 0.25, 0.25, 0.25) * input.color;
+    float4 diffuse = mesh_diffuse[myTextureId].Sample(default_sampler, input.texture_coord);
+   // return (diffuse * 0.75) + float4(0.25, 0.25, 0.25, 0.25) * input.color;
+    return diffuse;
 }

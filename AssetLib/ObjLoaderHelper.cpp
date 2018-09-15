@@ -76,36 +76,36 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
                     assert(f1 >= 0);
                     assert(f2 >= 0);
 
-                    vertex_buffer.push_back(attrib.vertices[3 * f0 + 0]);
-                    vertex_buffer.push_back(attrib.vertices[3 * f0 + 1]);
-                    vertex_buffer.push_back(attrib.vertices[3 * f0 + 2]);
-                    vertex_buffer.push_back(attrib.normals[3 * n0 + 0]);
-                    vertex_buffer.push_back(attrib.normals[3 * n0 + 1]);
-                    vertex_buffer.push_back(attrib.normals[3 * n0 + 2]);
-                    vertex_buffer.push_back(1.0f);
-                    vertex_buffer.push_back(attrib.texcoords[2 * t0 + 0]);
-                    vertex_buffer.push_back(attrib.texcoords[2 * t0 + 1]);
-
-
-                    vertex_buffer.push_back(attrib.vertices[3 * f1 + 0]);
-                    vertex_buffer.push_back(attrib.vertices[3 * f1 + 1]);
-                    vertex_buffer.push_back(attrib.vertices[3 * f1 + 2]);
-                    vertex_buffer.push_back(attrib.normals[3 * n1 + 0]);
-                    vertex_buffer.push_back(attrib.normals[3 * n1 + 1]);
-                    vertex_buffer.push_back(attrib.normals[3 * n1 + 2]);
-                    vertex_buffer.push_back(1.0f);
-                    vertex_buffer.push_back(attrib.texcoords[2 * t1 + 0]);
-                    vertex_buffer.push_back(attrib.texcoords[2 * t1 + 1]);
-
-                    vertex_buffer.push_back(attrib.vertices[3 * f2 + 0]);
-                    vertex_buffer.push_back(attrib.vertices[3 * f2 + 1]);
-                    vertex_buffer.push_back(attrib.vertices[3 * f2 + 2]);
-                    vertex_buffer.push_back(attrib.normals[3 * n2 + 0]);
-                    vertex_buffer.push_back(attrib.normals[3 * n2 + 1]);
-                    vertex_buffer.push_back(attrib.normals[3 * n2 + 2]);
-                    vertex_buffer.push_back(1.0f);
-                    vertex_buffer.push_back(attrib.texcoords[2 * t2 + 0]);
-                    vertex_buffer.push_back(attrib.texcoords[2 * t2 + 1]);
+                    //vertex_buffer.push_back(attrib.vertices[3 * f0 + 0]);
+                    //vertex_buffer.push_back(attrib.vertices[3 * f0 + 1]);
+                    //vertex_buffer.push_back(attrib.vertices[3 * f0 + 2]);
+                    //vertex_buffer.push_back(attrib.normals[3 * n0 + 0]);
+                    //vertex_buffer.push_back(attrib.normals[3 * n0 + 1]);
+                    //vertex_buffer.push_back(attrib.normals[3 * n0 + 2]);
+                    //vertex_buffer.push_back(1.0f);
+                    //vertex_buffer.push_back(attrib.texcoords[2 * t0 + 0]);
+                    //vertex_buffer.push_back(attrib.texcoords[2 * t0 + 1]);
+                    //
+                    //
+                    //vertex_buffer.push_back(attrib.vertices[3 * f1 + 0]);
+                    //vertex_buffer.push_back(attrib.vertices[3 * f1 + 1]);
+                    //vertex_buffer.push_back(attrib.vertices[3 * f1 + 2]);
+                    //vertex_buffer.push_back(attrib.normals[3 * n1 + 0]);
+                    //vertex_buffer.push_back(attrib.normals[3 * n1 + 1]);
+                    //vertex_buffer.push_back(attrib.normals[3 * n1 + 2]);
+                    //vertex_buffer.push_back(1.0f);
+                    //vertex_buffer.push_back(attrib.texcoords[2 * t1 + 0]);
+                    //vertex_buffer.push_back(attrib.texcoords[2 * t1 + 1]);
+                    //
+                    //vertex_buffer.push_back(attrib.vertices[3 * f2 + 0]);
+                    //vertex_buffer.push_back(attrib.vertices[3 * f2 + 1]);
+                    //vertex_buffer.push_back(attrib.vertices[3 * f2 + 2]);
+                    //vertex_buffer.push_back(attrib.normals[3 * n2 + 0]);
+                    //vertex_buffer.push_back(attrib.normals[3 * n2 + 1]);
+                    //vertex_buffer.push_back(attrib.normals[3 * n2 + 2]);
+                    //vertex_buffer.push_back(1.0f);
+                    //vertex_buffer.push_back(attrib.texcoords[2 * t2 + 0]);
+                    //vertex_buffer.push_back(attrib.texcoords[2 * t2 + 1]);
 
 
                 }
@@ -121,46 +121,46 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadObj(const std::string & p_fi
                 l_mesh->m_sub_meshes.push_back(l_sub_mesh);
 
             }
-            //uint32_t i = 0;
-            //uint32_t j = 0;
-            //uint32_t k = 0;
-            //for (auto& vertex : attrib.vertices)
-            //{
-            //    vertex_buffer.push_back(vertex);
-            //    if (i % 3 == 2)
-            //    {
-            //        if (j >= attrib.normals.size())
-            //        {
-            //            vertex_buffer.push_back(0.0f);
-            //            vertex_buffer.push_back(0.0f);
-            //            vertex_buffer.push_back(0.0f);
-            //            vertex_buffer.push_back(1.0f);
-            //            vertex_buffer.push_back(0.0f);
-            //            vertex_buffer.push_back(0.0f);
-            //        }
-            //        else
-            //        {
-            //            vertex_buffer.push_back(attrib.normals[j + 0]);
-            //            vertex_buffer.push_back(attrib.normals[j + 1]);
-            //            vertex_buffer.push_back(attrib.normals[j + 2]);
-            //            vertex_buffer.push_back(1.0f);
-            //
-            //            if (k >= attrib.texcoords.size())
-            //            {
-            //                vertex_buffer.push_back(0.0f);
-            //                vertex_buffer.push_back(0.0f);
-            //            }
-            //            else
-            //            {
-            //                vertex_buffer.push_back(attrib.texcoords[k + 0]);
-            //                vertex_buffer.push_back(attrib.texcoords[k + 1]);
-            //            }
-            //        }
-            //        j += 3;
-            //        k += 2;
-            //    }
-            //    ++i;
-            //}
+            uint32_t i = 0;
+            uint32_t j = 0;
+            uint32_t k = 0;
+            for (auto& vertex : attrib.vertices)
+            {
+                vertex_buffer.push_back(vertex);
+                if (i % 3 == 2)
+                {
+                    if (j >= attrib.normals.size())
+                    {
+                        vertex_buffer.push_back(0.0f);
+                        vertex_buffer.push_back(0.0f);
+                        vertex_buffer.push_back(0.0f);
+                        vertex_buffer.push_back(1.0f);
+                        vertex_buffer.push_back(0.0f);
+                        vertex_buffer.push_back(0.0f);
+                    }
+                    else
+                    {
+                        vertex_buffer.push_back(attrib.normals[j + 0]);
+                        vertex_buffer.push_back(attrib.normals[j + 1]);
+                        vertex_buffer.push_back(attrib.normals[j + 2]);
+                        vertex_buffer.push_back(1.0f);
+            
+                        if (k >= attrib.texcoords.size())
+                        {
+                            vertex_buffer.push_back(0.0f);
+                            vertex_buffer.push_back(0.0f);
+                        }
+                        else
+                        {
+                            vertex_buffer.push_back(attrib.texcoords[k + 0]);
+                            vertex_buffer.push_back(attrib.texcoords[k + 1]);
+                        }
+                    }
+                    j += 3;
+                    k += 2;
+                }
+                ++i;
+            }
             l_mesh->m_vertices = vertex_buffer;
             l_scene->dummy_actor->AddMesh(std::move(l_mesh));
         }

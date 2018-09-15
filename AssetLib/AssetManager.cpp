@@ -1,5 +1,6 @@
 #include "AssetManager.h"
 #include "ObjLoaderHelper.h"
+#include "FBXLoaderHelper.h"
 #include <DX12Texture.h>
 
 
@@ -73,7 +74,7 @@ void assetlib::AssetManager::LoadScene(const std::string & p_name)
 
     using namespace Renderer;
 
-    std::shared_ptr<gameplay::GamesScene> l_scene = LoadObj(p_name);
+    std::shared_ptr<gameplay::GamesScene> l_scene = LoadFBX(KEngineConstants::MODEL_ASSET_DIR + p_name);
     assert(l_scene && "Nullptr!");
 
     m_scenes[p_name] = l_scene;

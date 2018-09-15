@@ -380,7 +380,7 @@ void Renderer::DX12Renderer::InitRootSignature()
             shadow_map_desc_range,
             diffuse_desc_range
         };
-        l_desc_table_parameter.DescriptorTable.NumDescriptorRanges = ranges.size();
+        l_desc_table_parameter.DescriptorTable.NumDescriptorRanges = static_cast<uint32_t>(ranges.size());
         l_desc_table_parameter.DescriptorTable.pDescriptorRanges = ranges.data();
 
 
@@ -418,7 +418,7 @@ void Renderer::DX12Renderer::InitRootSignature()
             l_default_sampler
         };
 
-        rootSignatureDesc.Init(l_parameters.size(), l_parameters.data(),l_static_samplers.size(),l_static_samplers.data());
+        rootSignatureDesc.Init(static_cast<uint32_t>(l_parameters.size()), l_parameters.data(),l_static_samplers.size(),l_static_samplers.data());
         rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> signature;
         ComPtr<ID3DBlob> error;

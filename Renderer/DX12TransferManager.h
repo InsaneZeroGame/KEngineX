@@ -20,8 +20,10 @@ namespace Renderer
     {
         typedef enum JobType
         {
-            UPLOAD_VERTEX_BUFFER,
+            UPLOAD_VERTEX,
+            UPLOAD_INDEX,
             UPLOAD_TEXTURE,
+
         }Jobtype;
 
         JobType type;
@@ -29,7 +31,7 @@ namespace Renderer
         uint64_t data_size;
         bool job_done;
         bool retain;
-        uint64_t gpu_va_address;
+        //uint64_t gpu_va_address;
         //For Texture Transfer
         uint64_t RowPitch;
         uint64_t SlicePitch;
@@ -66,13 +68,28 @@ namespace Renderer
 
         void TransitionResource(DX12GpuResource& Resource, D3D12_RESOURCE_STATES NewState, bool FlushImmediate, D3D12_COMMAND_LIST_TYPE);
 
+        __forceinline D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView()
+        {
+            return m_vertex_buffer->VertexBufferView();
+        }
+
+        __forceinline D3D12_INDEX_BUFFER_VIEW GetIndexBufferView()
+        {
+            return m_index_buffer->IndexBufferView(0,m_index_buffer->GetBufferSize(),true);
+        }
+
+
     private:
         DX12TransferManager();
         DX12GpuDevice* m_device;
         std::unique_ptr<VertexIndexBuffer> m_vertex_buffer;
         
-        std::unique_ptr<UniformBuffer> m_upload_buffer;
+        std::unique_ptr<VertexIndexBuffer> m_index_buffer;
+
+        std::unique_ptr<UniformBuffer> m_vertex_upload_buffer;
         
+        std::unique_ptr<UniformBuffer> m_index_upload_buffer;
+
         std::unique_ptr<UniformBuffer> m_texture_upload_buffer;
 
         D3D12_RESOURCE_BARRIER m_ResourceBarrierBuffer[16];
@@ -89,6 +106,7 @@ namespace Renderer
         void FlushResourceBarriers(void);
         void DoOneJob(TransferJob*);
         void UploadDataToVertexBuffer(TransferJob* p_job);
+        void UploadDataToIndexBuffer(TransferJob* p_job);
         void UploadTexture(TransferJob* p_job);
     };//DX12UploadManager
 }//Renderer

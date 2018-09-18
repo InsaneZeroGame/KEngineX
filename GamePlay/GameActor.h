@@ -14,11 +14,13 @@ namespace gameplay
 
         virtual ~GameActor();
 
-        std::unique_ptr<GameMesh> m_mesh;
+        std::vector<GameMesh*> m_meshes;
 
-        __forceinline void AddMesh(std::unique_ptr<GameMesh> p_mesh)
+        __forceinline void AddMesh(GameMesh* p_mesh)
         {
-            m_mesh = std::forward<std::unique_ptr<GameMesh>>(p_mesh);
+            m_meshes.push_back(p_mesh);
         }
+
+
     };
 }

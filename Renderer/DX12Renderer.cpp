@@ -226,6 +226,8 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         shadow_cmd->ClearDepthStencilView(m_shadow_map->GetDSV().cpu_handle, D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
         shadow_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         shadow_cmd->OMSetRenderTargets(0, nullptr, FALSE, &m_shadow_map->GetDSV().cpu_handle);
+        //Set Vertex and Index Buffer.
+        SetVertexAndIndexBuffer(shadow_cmd);
         //Render Scene
         RenderScene(shadow_cmd);
         m_shadow_map_cmd->Flush();
@@ -268,6 +270,8 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         current_render_cmd->ClearDepthStencilView(m_depth_buffer->GetDSV().cpu_handle, D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
         current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         current_render_cmd->OMSetRenderTargets(1, &rtvHandle, FALSE, &m_depth_buffer->GetDSV().cpu_handle);
+        //Set Vertex and Index Buffer.
+        SetVertexAndIndexBuffer(current_render_cmd);
         //Render Scene
         RenderScene(current_render_cmd);
         // Indicate that the back buffer will now be used to present.
@@ -429,29 +433,21 @@ void Renderer::DX12Renderer::InitRootSignature()
 
 void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_render_cmd)
 {
-    //float diffuse[4] = {0.25f,0.75f,0.55f,1.0f};
+    for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
     {
-        D3D12_VERTEX_BUFFER_VIEW l_mesh_desc = {};
-        l_mesh_desc.BufferLocation = m_scene->dummy_actor->m_mesh->m_vertex_buffer_desc.BufferLocation;
-        l_mesh_desc.SizeInBytes = m_scene->dummy_actor->m_mesh->m_vertex_buffer_desc.SizeInBytes;
-        l_mesh_desc.StrideInBytes = m_scene->dummy_actor->m_mesh->m_vertex_buffer_desc.StrideInBytes;
-
-        current_render_cmd->IASetVertexBuffers(0, 1, &l_mesh_desc);
-
-
-        for (auto & submesh : m_scene->dummy_actor->m_mesh->m_sub_meshes)
-        {
-            current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, submesh.m_diffuse.data(), 0);
-            //int texture_id = m_dummy_actor_textures[m_scene->dummy_actor->m_mesh->m_texture_names[submesh.m_texture_id]]->m_descriptor_heap_index;
-            current_render_cmd->SetGraphicsRoot32BitConstant(2, 0, 0);
-            D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
-            l_sub_mesh_desc.BufferLocation = submesh.m_index_buffer_desc.BufferLocation;
-            l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;
-            l_sub_mesh_desc.SizeInBytes = submesh.m_index_buffer_desc.SizeInBytes;
-            current_render_cmd->IASetIndexBuffer(&l_sub_mesh_desc);
-            current_render_cmd->DrawIndexedInstanced(submesh.m_index_count, 1, 0, 0, 0);
-        }
+        current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, l_mesh->m_diffuse.data(), 0);
+        //int texture_id = m_dummy_actor_textures[m_scene->dummy_actor->m_mesh->m_texture_names[submesh.m_texture_id]]->m_descriptor_heap_index;
+        current_render_cmd->SetGraphicsRoot32BitConstant(2, 0, 0);
+        current_render_cmd->DrawIndexedInstanced(l_mesh->m_index_count, 1, l_mesh->m_index_offset,l_mesh->m_vertex_offset,0);
     }
+}
+
+void Renderer::DX12Renderer::SetVertexAndIndexBuffer(ID3D12GraphicsCommandList * p_cmd)
+{   
+    auto vertexbufferview = DX12TransferManager::GetTransferManager().GetVertexBufferView();
+    p_cmd->IASetVertexBuffers(0, 1, &DX12TransferManager::GetTransferManager().GetVertexBufferView());
+    auto bufferview = DX12TransferManager::GetTransferManager().GetIndexBufferView();
+    p_cmd->IASetIndexBuffer(&DX12TransferManager::GetTransferManager().GetIndexBufferView());
 }
 
 void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
@@ -477,33 +473,38 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
     }
     m_scene = p_scene;
 
-    for (auto & l_texture_name_to_load : p_scene->dummy_actor->m_mesh->m_texture_names)
+    for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
     {
-        //Skip if default texture
-        if (l_texture_name_to_load == KEngineConstants::DEFAULT_TEXTURE_NAME) continue;
-        //Skip if texture loaded already.
-        if (m_dummy_actor_textures.find(l_texture_name_to_load) != m_dummy_actor_textures.end()) continue;
-        int w, h, comp;
-        unsigned char* image = stbi_load((KEngineConstants::ASSET_DIR + l_texture_name_to_load).c_str(), &w, &h, &comp, STBI_rgb_alpha);
-        
-        uint8_t black_image[4] = {0,0,0,0};
-
-        //If texture not found,leave it as 1x1 black image.
-        if (!image)
+        for (auto & l_texture_name_to_load : l_mesh->m_texture_names)
         {
-            DX12Texture* l_texture = new DX12Texture;
-            l_texture->Create(1, 1, 1, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, black_image);
-            m_dummy_actor_textures.insert(std::pair<std::string, std::unique_ptr<DX12Texture>>(l_texture_name_to_load, std::unique_ptr<DX12Texture>(l_texture)));
-        }
-        else
-        {
-            DX12Texture* l_texture = new DX12Texture;
-            l_texture->Create(1, w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
-            m_dummy_actor_textures.insert(std::pair<std::string, std::unique_ptr<DX12Texture>>(l_texture_name_to_load, std::unique_ptr<DX12Texture>(l_texture)));
+            //Skip if default texture
+            if (l_texture_name_to_load == KEngineConstants::DEFAULT_TEXTURE_NAME) continue;
+            //Skip if texture loaded already.
+            if (m_dummy_actor_textures.find(l_texture_name_to_load) != m_dummy_actor_textures.end()) continue;
+            int w, h, comp;
+            unsigned char* image = stbi_load((KEngineConstants::ASSET_DIR + l_texture_name_to_load).c_str(), &w, &h, &comp, STBI_rgb_alpha);
+
+            uint8_t black_image[4] = { 0,0,0,0 };
+
+            //If texture not found,leave it as 1x1 black image.
+            if (!image)
+            {
+                DX12Texture* l_texture = new DX12Texture;
+                l_texture->Create(1, 1, 1, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, black_image);
+                m_dummy_actor_textures.insert(std::pair<std::string, std::unique_ptr<DX12Texture>>(l_texture_name_to_load, std::unique_ptr<DX12Texture>(l_texture)));
+            }
+            else
+            {
+                DX12Texture* l_texture = new DX12Texture;
+                l_texture->Create(1, w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
+                m_dummy_actor_textures.insert(std::pair<std::string, std::unique_ptr<DX12Texture>>(l_texture_name_to_load, std::unique_ptr<DX12Texture>(l_texture)));
+
+            }
 
         }
-       
+
     }
+
 
 
 }

@@ -61,8 +61,8 @@ namespace Renderer {
         std::unique_ptr<DX12DepthBuffer> m_shadow_map;
 
         std::unique_ptr<DX12RenderCommndBuffer> m_shadow_map_cmd;
-
         std::unique_ptr<UniformBuffer> m_shadow_map_camera_uniform;
+
 
         std::unordered_map<std::string, std::unique_ptr<DX12Texture>> m_dummy_actor_textures;
 
@@ -100,6 +100,8 @@ namespace Renderer {
         void InitRootSignature();
 
         void RenderScene(ID3D12GraphicsCommandList*);
+
+        void SetVertexAndIndexBuffer(ID3D12GraphicsCommandList* p_cmd);
 
     public:
         // Inherited via IModule

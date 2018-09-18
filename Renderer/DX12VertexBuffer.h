@@ -9,7 +9,7 @@ namespace Renderer
         Microsoft::WRL::ComPtr<ID3D12Heap> heap;
         uint64_t offset = 0;
 
-        VertexIndexBuffer(uint64_t p_size) : DX12GpuBuffer()
+        VertexIndexBuffer(const std::wstring& name,uint64_t p_size) : DX12GpuBuffer()
         {
             m_BufferSize = p_size;
 
@@ -29,7 +29,7 @@ namespace Renderer
 
             //Init Vertex Index Buffer.
             {
-                CreatePlaced(L"VertexBuffer", heap.Get(), 0, m_BufferSize, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+                CreatePlaced(name, heap.Get(), 0, m_BufferSize, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
             }
         }
 

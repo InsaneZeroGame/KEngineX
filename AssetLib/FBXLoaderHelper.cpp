@@ -3,21 +3,19 @@
 #include <KLogger.h>
 
 static FbxManager* pManager;
-static uint64_t vertex_offset = 0;
+//vertex id offset in the vertex buffer.
+static uint64_t s_vertex_offset = 0;
+//Index id offset in the index buffer.
+static uint64_t s_index_offset = 0;
 
 
-void DisplayPolygons(FbxMesh* pMesh, gameplay::GamesScene* p_game_scene)
+void DisplayPolygons(FbxMesh* pMesh, gameplay::GameMesh* p_game_mesh)
 {
     int i, j, lPolygonCount = pMesh->GetPolygonCount();
     FbxVector4* lControlPoints = pMesh->GetControlPoints();
 
-    //We map Fbx::mesh -> Gameplay::mesh
-    //1.All vertices in Fbx::mesh -> Gameplay::mesh vertices.
-    //2.Since all veritces is in one vertex buffer,vertex index in Fbx::mesh is added an index offset per Fbx::mesh(Gameplay::sbumesh).
-
-
-    //Add by Ang to map Fbx::mesh -> Gameplay::submesh.
-    std::vector<uint32_t> indices = {};
+    //Get index offset from of current index buffer.
+    p_game_mesh->m_index_offset = s_index_offset;
 
     for (i = 0; i < lPolygonCount; i++)
     {
@@ -25,27 +23,26 @@ void DisplayPolygons(FbxMesh* pMesh, gameplay::GamesScene* p_game_scene)
         for (j = 0; j < lPolygonSize; j++)
         {
             int lControlPointIndex = pMesh->GetPolygonVertex(i, j);
-            indices.push_back(lControlPointIndex + vertex_offset);
+            p_game_mesh->m_indices.push_back(lControlPointIndex);
         } // for polygonSize
     } // for polygonCount
-    gameplay::GameSubMesh l_submesh(indices);
-
-    p_game_scene->dummy_actor->m_mesh->m_sub_meshes.push_back(l_submesh);
+    p_game_mesh->m_index_count = p_game_mesh->m_indices.size();
+    s_index_offset += p_game_mesh->m_indices.size();
 }
 
 
-static void DisplayControlsPoints(FbxMesh* pMesh, gameplay::GamesScene* p_game_scene)
+static void DisplayControlsPoints(FbxMesh* pMesh, gameplay::GameMesh* p_game_mesh)
 {
     int i, lControlPointsCount = pMesh->GetControlPointsCount();
-    vertex_offset += lControlPointsCount;
     FbxVector4* lControlPoints = pMesh->GetControlPoints();
 
+    p_game_mesh->m_vertex_offset = s_vertex_offset;
 
     for (i = 0; i < lControlPointsCount; i++)
     {
-        p_game_scene->dummy_actor->m_mesh->m_vertices.push_back(lControlPoints[i].Buffer()[0]);
-        p_game_scene->dummy_actor->m_mesh->m_vertices.push_back(lControlPoints[i].Buffer()[1]);
-        p_game_scene->dummy_actor->m_mesh->m_vertices.push_back(lControlPoints[i].Buffer()[2]);
+        p_game_mesh->m_vertices.push_back(lControlPoints[i].Buffer()[0]);
+        p_game_mesh->m_vertices.push_back(lControlPoints[i].Buffer()[1]);
+        p_game_mesh->m_vertices.push_back(lControlPoints[i].Buffer()[2]);
 
         for (int j = 0; j < pMesh->GetElementNormalCount(); j++)
         {
@@ -54,34 +51,29 @@ static void DisplayControlsPoints(FbxMesh* pMesh, gameplay::GamesScene* p_game_s
             {
                 if (leNormals->GetReferenceMode() == FbxGeometryElement::eDirect)
                 {
-                    p_game_scene->dummy_actor->m_mesh->m_vertices.push_back(leNormals->GetDirectArray().GetAt(i).Buffer()[0]);
-                    p_game_scene->dummy_actor->m_mesh->m_vertices.push_back(leNormals->GetDirectArray().GetAt(i).Buffer()[1]);
-                    p_game_scene->dummy_actor->m_mesh->m_vertices.push_back(leNormals->GetDirectArray().GetAt(i).Buffer()[2]);
-                    p_game_scene->dummy_actor->m_mesh->m_vertices.push_back(1.0f);
-                    p_game_scene->dummy_actor->m_mesh->m_vertices.push_back(0.0f);
-                    p_game_scene->dummy_actor->m_mesh->m_vertices.push_back(0.0f);
+                    p_game_mesh->m_vertices.push_back(leNormals->GetDirectArray().GetAt(i).Buffer()[0]);
+                    p_game_mesh->m_vertices.push_back(leNormals->GetDirectArray().GetAt(i).Buffer()[1]);
+                    p_game_mesh->m_vertices.push_back(leNormals->GetDirectArray().GetAt(i).Buffer()[2]);
+                    p_game_mesh->m_vertices.push_back(1.0f);
+                    p_game_mesh->m_vertices.push_back(0.0f);
+                    p_game_mesh->m_vertices.push_back(0.0f);
                 }
             }
         }
     }
+    p_game_mesh->m_vertex_count = lControlPointsCount;
+    s_vertex_offset += lControlPointsCount;
 }
 
 
 void DisplayMesh(FbxNode* pNode, gameplay::GamesScene* p_game_scene)
 {
     FbxMesh* lMesh = (FbxMesh*)pNode->GetNodeAttribute();
-
-    //DisplayMetaDataConnections(lMesh);
-    DisplayPolygons(lMesh, p_game_scene);
-    DisplayControlsPoints(lMesh, p_game_scene);
-    //DisplayMaterialMapping(lMesh);
-    //DisplayMaterial(lMesh);
-    //DisplayTexture(lMesh);
-    //DisplayMaterialConnections(lMesh);
-    //DisplayLink(lMesh);
-    //DisplayShape(lMesh);
-    //
-    //DisplayCache(lMesh);
+    //Add new mesh.
+    auto l_game_mesh = new gameplay::GameMesh;
+    DisplayPolygons(lMesh, l_game_mesh);
+    DisplayControlsPoints(lMesh, l_game_mesh);
+    p_game_scene->dummy_actor->m_meshes.push_back(l_game_mesh);
 }
 
 
@@ -254,12 +246,12 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadFBX(const std::string & p_fi
     using namespace gameplay;
 
     //Setup Main Camera
-    Vector3 eye = Vector3(3.0f, 3.0f, 3.0f);
+    Vector3 eye = Vector3(150.0f, 250.0f, 150.0f);
     Vector3 at = Vector3(0.0f, 0.0f, 0.0f);
     Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
 
     l_scene->m_main_camera.SetEyeAtUp(eye, at, up);
-    l_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 0.5f, 6.0f);
+    l_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 10.f, 550.0f);
     l_scene->m_main_camera.Update();
 
     //Setup Shadow Camera

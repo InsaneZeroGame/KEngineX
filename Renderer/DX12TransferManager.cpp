@@ -3,7 +3,9 @@ Renderer::DX12TransferManager::DX12TransferManager() :
     m_device(DX12GpuDevice::GetGpuDevicePtr()),
     m_NumBarriersToFlush(0),
     m_vertex_buffer(nullptr),
-    m_upload_buffer(nullptr)
+    m_index_buffer(nullptr),
+    m_vertex_upload_buffer(nullptr),
+    m_index_upload_buffer(nullptr)
 {
     InitBuffers();
     InitCmdBuffers();
@@ -11,9 +13,12 @@ Renderer::DX12TransferManager::DX12TransferManager() :
 
 void Renderer::DX12TransferManager::InitBuffers()
 {
-    m_upload_buffer = std::unique_ptr<UniformBuffer>(new UniformBuffer(KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE));
+    m_index_upload_buffer = std::unique_ptr<UniformBuffer>(new UniformBuffer(KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE));
+    m_vertex_upload_buffer = std::unique_ptr<UniformBuffer>(new UniformBuffer(KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE));
     m_texture_upload_buffer = std::unique_ptr<UniformBuffer>(new UniformBuffer(KEngineConstants::TEXTURE_UPLOAD_BUFFER_SIZE_IN_BYTE));
-    m_vertex_buffer = std::unique_ptr<VertexIndexBuffer>(new VertexIndexBuffer(KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE));
+    m_vertex_buffer = std::unique_ptr<VertexIndexBuffer>(new VertexIndexBuffer(L"VertexBuffer",KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE));
+    m_index_buffer = std::unique_ptr<VertexIndexBuffer>(new VertexIndexBuffer(L"IndexBuffer", KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE));
+
 }
 
 void Renderer::DX12TransferManager::InitCmdBuffers()
@@ -65,9 +70,11 @@ void Renderer::DX12TransferManager::PrepareToRender()
 {
 
     m_UploadCommandList->Reset();
-    m_UploadCommandList->GetDX12CmdList()->CopyBufferRegion(m_vertex_buffer->GetResource(),0, m_upload_buffer->GetResource(), 0, KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE);
+    m_UploadCommandList->GetDX12CmdList()->CopyBufferRegion(m_vertex_buffer->GetResource(),0, m_vertex_upload_buffer->GetResource(), 0, KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE);
+    m_UploadCommandList->GetDX12CmdList()->CopyBufferRegion(m_index_buffer->GetResource(), 0, m_index_upload_buffer->GetResource(), 0, KEngineConstants::VERTEX_INDEX_BUFFER_SIZE_IN_BYTE);
     m_UploadCommandList->Flush();
     TransitionResource(*m_vertex_buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+    TransitionResource(*m_index_buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_GENERIC_READ, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 
 }
 
@@ -88,8 +95,11 @@ void Renderer::DX12TransferManager::DoOneJob(TransferJob* p_job)
 
     switch (p_job->type)
     {
-    case TransferJob::JobType::UPLOAD_VERTEX_BUFFER:
+    case TransferJob::JobType::UPLOAD_VERTEX:
         UploadDataToVertexBuffer(p_job);  
+        break;
+    case TransferJob::JobType::UPLOAD_INDEX:
+        UploadDataToIndexBuffer(p_job);
         break;
     case TransferJob::JobType::UPLOAD_TEXTURE:
         UploadTexture(p_job);
@@ -102,9 +112,14 @@ void Renderer::DX12TransferManager::DoOneJob(TransferJob* p_job)
 
 void Renderer::DX12TransferManager::UploadDataToVertexBuffer(TransferJob* p_job)
 {
-    memcpy(m_upload_buffer->data + m_vertex_buffer->offset, p_job->data, p_job->data_size);
-    p_job->gpu_va_address = m_vertex_buffer->GetGpuVirtualAddress() + m_vertex_buffer->offset;
+    memcpy(m_vertex_upload_buffer->data + m_vertex_buffer->offset, p_job->data, p_job->data_size);
     m_vertex_buffer->offset += p_job->data_size;
+}
+
+void Renderer::DX12TransferManager::UploadDataToIndexBuffer(TransferJob * p_job)
+{
+    memcpy(m_index_upload_buffer->data + m_index_buffer->offset, p_job->data, p_job->data_size);
+    m_index_buffer->offset += p_job->data_size;
 }
 
 void Renderer::DX12TransferManager::UploadTexture(TransferJob * p_job)

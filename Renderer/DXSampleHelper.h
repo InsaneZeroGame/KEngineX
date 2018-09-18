@@ -11,6 +11,7 @@
 
 #pragma once
 #include <string>
+#include <EngineConfig.h>
 // Note that while ComPtr is used to manage the lifetime of resources on the CPU,
 // it has no understanding of the lifetime of resources on the GPU. Apps must account
 // for the GPU lifetime of resources to avoid destroying objects that may still be
@@ -192,5 +193,5 @@ void ResetUniquePtrArray(T* uniquePtrArray)
 
 inline std::wstring GetAssetFullPath(LPCWSTR assetName)
 {
-    return std::wstring(L"D:\\Dev\\KEngineX\\Assets\\Shaders\\") + assetName;
+    return KEngineConstants::SHADER_ASSET_DIR + assetName;
 }

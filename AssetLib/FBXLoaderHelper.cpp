@@ -31,7 +31,7 @@ void DisplayPolygons(FbxMesh* pMesh, gameplay::GameMesh* p_game_mesh)
 }
 
 
-static void DisplayControlsPoints(FbxMesh* pMesh, gameplay::GameMesh* p_game_mesh)
+static void DisplayControlsPoints(FbxMesh* pMesh, gameplay::GameMesh* p_game_mesh, FbxAMatrix* p_transform_matrix)
 {
     int i, lControlPointsCount = pMesh->GetControlPointsCount();
     FbxVector4* lControlPoints = pMesh->GetControlPoints();
@@ -40,9 +40,11 @@ static void DisplayControlsPoints(FbxMesh* pMesh, gameplay::GameMesh* p_game_mes
 
     for (i = 0; i < lControlPointsCount; i++)
     {
-        p_game_mesh->m_vertices.push_back(lControlPoints[i].Buffer()[0]);
-        p_game_mesh->m_vertices.push_back(lControlPoints[i].Buffer()[1]);
-        p_game_mesh->m_vertices.push_back(lControlPoints[i].Buffer()[2]);
+        auto transformed_control_points = p_transform_matrix->MultT(lControlPoints[i]);
+
+        p_game_mesh->m_vertices.push_back(static_cast<float>(transformed_control_points.Buffer()[0]));
+        p_game_mesh->m_vertices.push_back(static_cast<float>(transformed_control_points.Buffer()[1]));
+        p_game_mesh->m_vertices.push_back(static_cast<float>(transformed_control_points.Buffer()[2]));
 
         for (int j = 0; j < pMesh->GetElementNormalCount(); j++)
         {
@@ -51,9 +53,9 @@ static void DisplayControlsPoints(FbxMesh* pMesh, gameplay::GameMesh* p_game_mes
             {
                 if (leNormals->GetReferenceMode() == FbxGeometryElement::eDirect)
                 {
-                    p_game_mesh->m_vertices.push_back(leNormals->GetDirectArray().GetAt(i).Buffer()[0]);
-                    p_game_mesh->m_vertices.push_back(leNormals->GetDirectArray().GetAt(i).Buffer()[1]);
-                    p_game_mesh->m_vertices.push_back(leNormals->GetDirectArray().GetAt(i).Buffer()[2]);
+                    p_game_mesh->m_vertices.push_back(static_cast<float>(leNormals->GetDirectArray().GetAt(i).Buffer()[0]));
+                    p_game_mesh->m_vertices.push_back(static_cast<float>(leNormals->GetDirectArray().GetAt(i).Buffer()[1]));
+                    p_game_mesh->m_vertices.push_back(static_cast<float>(leNormals->GetDirectArray().GetAt(i).Buffer()[2]));
                     p_game_mesh->m_vertices.push_back(1.0f);
                     p_game_mesh->m_vertices.push_back(0.0f);
                     p_game_mesh->m_vertices.push_back(0.0f);
@@ -71,8 +73,19 @@ void DisplayMesh(FbxNode* pNode, gameplay::GamesScene* p_game_scene)
     FbxMesh* lMesh = (FbxMesh*)pNode->GetNodeAttribute();
     //Add new mesh.
     auto l_game_mesh = new gameplay::GameMesh;
+    FbxAMatrix matrixGeo;
+    matrixGeo.SetIdentity();
+    const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
+    const FbxVector4 lR = pNode->GetGeometricRotation(FbxNode::eSourcePivot);
+    const FbxVector4 lS = pNode->GetGeometricScaling(FbxNode::eSourcePivot);
+    matrixGeo.SetT(lT);
+    matrixGeo.SetR(lR);
+    matrixGeo.SetS(lS);
+    FbxAMatrix globalMatrix = pNode->EvaluateLocalTransform();
+    FbxAMatrix matrix = globalMatrix * matrixGeo;
+
     DisplayPolygons(lMesh, l_game_mesh);
-    DisplayControlsPoints(lMesh, l_game_mesh);
+    DisplayControlsPoints(lMesh, l_game_mesh,&matrix);
     p_game_scene->dummy_actor->m_meshes.push_back(l_game_mesh);
 }
 
@@ -170,7 +183,7 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadFBX(const std::string & p_fi
     //int lFileFormat = -1;
     int i, lAnimStackCount;
     bool lStatus;
-    char lPassword[1024];
+    //char lPassword[1024];
 
     // Get the file version number generate by the FBX SDK.
     FbxManager::GetFileFormatVersion(lSDKMajor, lSDKMinor, lSDKRevision);
@@ -246,21 +259,21 @@ std::unique_ptr<gameplay::GamesScene> assetlib::LoadFBX(const std::string & p_fi
     using namespace gameplay;
 
     //Setup Main Camera
-    Vector3 eye = Vector3(150.0f, 250.0f, 150.0f);
+    Vector3 eye = Vector3(10.0f, 10.0f, 10.0f);
     Vector3 at = Vector3(0.0f, 0.0f, 0.0f);
     Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
 
     l_scene->m_main_camera.SetEyeAtUp(eye, at, up);
-    l_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 10.f, 550.0f);
+    l_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 5.0f, 25.0f);
     l_scene->m_main_camera.Update();
 
     //Setup Shadow Camera
-    eye = Vector3(-0.1f, 0.1f, 0.1f);
+    eye = Vector3(-5.0f, 15.0f, 5.0f);
     at = Vector3(0.0f, 0.0f, 0.0f);
     up = Vector3(0.0f, 1.0f, 0.0f);
 
     l_scene->m_shadow_camera.SetEyeAtUp(eye, at, up);
-    l_scene->m_shadow_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 0.5f, 15.0f);
+    l_scene->m_shadow_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 2.0, 15.0f);
     l_scene->m_shadow_camera.Update();
 
     return std::unique_ptr<gameplay::GamesScene>(l_scene);

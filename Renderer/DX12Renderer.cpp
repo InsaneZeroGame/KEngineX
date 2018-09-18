@@ -422,7 +422,7 @@ void Renderer::DX12Renderer::InitRootSignature()
             l_default_sampler
         };
 
-        rootSignatureDesc.Init(static_cast<uint32_t>(l_parameters.size()), l_parameters.data(),l_static_samplers.size(),l_static_samplers.data());
+        rootSignatureDesc.Init(static_cast<uint32_t>(l_parameters.size()), l_parameters.data(), static_cast<uint32_t>(l_static_samplers.size()),l_static_samplers.data());
         rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
         ComPtr<ID3DBlob> signature;
         ComPtr<ID3DBlob> error;
@@ -438,7 +438,7 @@ void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_rend
         current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, l_mesh->m_diffuse.data(), 0);
         //int texture_id = m_dummy_actor_textures[m_scene->dummy_actor->m_mesh->m_texture_names[submesh.m_texture_id]]->m_descriptor_heap_index;
         current_render_cmd->SetGraphicsRoot32BitConstant(2, 0, 0);
-        current_render_cmd->DrawIndexedInstanced(l_mesh->m_index_count, 1, l_mesh->m_index_offset,l_mesh->m_vertex_offset,0);
+        current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->m_index_count), 1, static_cast<uint32_t>(l_mesh->m_index_offset), static_cast<int32_t>(l_mesh->m_vertex_offset),0);
     }
 }
 

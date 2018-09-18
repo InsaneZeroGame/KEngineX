@@ -70,12 +70,12 @@ namespace Renderer
 
         __forceinline D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView()
         {
-            return m_vertex_buffer->VertexBufferView();
+            return m_vertex_buffer->VertexBufferView(0, static_cast<uint32_t>(m_vertex_buffer->GetBufferSize()),static_cast<uint32_t>(sizeof(Vertex)));
         }
 
         __forceinline D3D12_INDEX_BUFFER_VIEW GetIndexBufferView()
         {
-            return m_index_buffer->IndexBufferView(0,m_index_buffer->GetBufferSize(),true);
+            return m_index_buffer->IndexBufferView(0,static_cast<uint32_t>(m_index_buffer->GetBufferSize()),true);
         }
 
 

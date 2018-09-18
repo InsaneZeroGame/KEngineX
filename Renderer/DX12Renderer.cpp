@@ -442,8 +442,8 @@ void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_rend
         for (auto & submesh : m_scene->dummy_actor->m_mesh->m_sub_meshes)
         {
             current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, submesh.m_diffuse.data(), 0);
-            int texture_id = m_dummy_actor_textures[m_scene->dummy_actor->m_mesh->m_texture_names[submesh.m_texture_id]]->m_descriptor_heap_index;
-            current_render_cmd->SetGraphicsRoot32BitConstant(2, texture_id, 0);
+            //int texture_id = m_dummy_actor_textures[m_scene->dummy_actor->m_mesh->m_texture_names[submesh.m_texture_id]]->m_descriptor_heap_index;
+            current_render_cmd->SetGraphicsRoot32BitConstant(2, 0, 0);
             D3D12_INDEX_BUFFER_VIEW l_sub_mesh_desc = {};
             l_sub_mesh_desc.BufferLocation = submesh.m_index_buffer_desc.BufferLocation;
             l_sub_mesh_desc.Format = DXGI_FORMAT::DXGI_FORMAT_R32_UINT;

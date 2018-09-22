@@ -18,9 +18,10 @@ cbuffer myMaterial: register(b0)
 
 cbuffer MVP: register(b1)
 {
-    matrix modelToProj;
-    matrix modelToShadow;
-    matrix project;
+    matrix proj;
+    matrix view;
+    matrix shadow_matrix;
+    matrix model;
 
 };
 
@@ -30,10 +31,10 @@ cbuffer MVP: register(b1)
 PSInput main(float3 position : POSITION, float4 color : COLOR,float2 texture_coord : TEXTURECOORD)
 {
 	PSInput result;
-
-	result.position = mul(modelToProj,float4(position,1.0f));
+    matrix proj_view_matrix = mul(proj,view);
+	result.position = mul(proj_view_matrix,float4(position,1.0f));
 	result.color = color;
-    float4 shadow_coord = mul(modelToShadow, float4(position, 1.0f));
+    float4 shadow_coord = mul(shadow_matrix, float4(position, 1.0f));
     result.shadow_coord = shadow_coord.xyz / shadow_coord.w;
     result.texture_coord = texture_coord;
 	return result;

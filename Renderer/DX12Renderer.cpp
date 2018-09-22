@@ -197,11 +197,11 @@ void Renderer::DX12Renderer::WaitForPreviousFrame()
     const auto swap_chain_frame = m_swapChain->GetCurrentBackBufferIndex();
 
     // If the next frame is not ready to be rendered yet, wait until it is ready.
-    if (m_fences[swap_chain_frame]->GetCompletedValue() < m_fence_value[swap_chain_frame])
-    {
-        ThrowIfFailed(m_fences[swap_chain_frame]->SetEventOnCompletion(m_fence_value[swap_chain_frame], m_fenceEvent));
-        WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
-    }
+    //if (m_fences[swap_chain_frame]->GetCompletedValue() < m_fence_value[swap_chain_frame])
+    //{
+    //    ThrowIfFailed(m_fences[swap_chain_frame]->SetEventOnCompletion(m_fence_value[swap_chain_frame], m_fenceEvent));
+    //    WaitForSingleObjectEx(m_fenceEvent, INFINITE, FALSE);
+    //}
 
     // Set the fence value for the next frame.
     m_fence_value[swap_chain_frame]++;
@@ -216,7 +216,11 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         auto shadow_cmd = m_shadow_map_cmd->GetDX12CmdList();
         shadow_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
         //Update Shadow Camera Uniform
-        memcpy(m_shadow_map_camera_uniform->data + sizeof(float) * 16, &m_scene->m_shadow_camera.GetViewProjMatrix(), sizeof(float) * 16);
+        Math::Matrix4 mvp[2] = {
+            m_scene->m_shadow_camera.GetProjMatrix(),
+            m_scene->m_shadow_camera.GetViewMatrix()
+        };
+        memcpy(m_shadow_map_camera_uniform->data, mvp, sizeof(Math::Matrix4) * 2);
         shadow_cmd->SetGraphicsRootConstantBufferView(1, m_shadow_map_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
         D3D12_VIEWPORT l_view_port = m_viewport;
         l_view_port.Width = DEPTH_BUFFER_WIDTH;
@@ -244,12 +248,15 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         current_render_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
         //Update Main Camera uniform
         using namespace Math;
-        auto shadow_prefix = Math::Matrix4(AffineTransform(Matrix3::MakeScale(0.5f, -0.5f, 1.0f), Vector3(0.5f, 0.5f, 0.0f)));
-        auto shadow_sample_matrix = shadow_prefix * m_scene->m_shadow_camera.GetViewProjMatrix();
-        memcpy(m_main_camera_uniform->data, &m_scene->m_main_camera.GetViewProjMatrix(), sizeof(float) * 16);
-        memcpy(m_main_camera_uniform->data + sizeof(float) * 16, &shadow_sample_matrix, sizeof(float) * 16);
+        auto shadow_sample_matrix = SHADOW_PREFIX * m_scene->m_shadow_camera.GetViewProjMatrix();
+        Math::Matrix4 mvp[3] = { 
+            m_scene->m_main_camera.GetProjMatrix(),
+            m_scene->m_main_camera.GetViewMatrix(), 
+            shadow_sample_matrix
+        };
+        memcpy(m_main_camera_uniform->data + CAMERA_UNIFORM_SIZE * m_current_frameindex, mvp, sizeof(Math::Matrix4) * 3);
 
-        current_render_cmd->SetGraphicsRootConstantBufferView(1, m_main_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
+        current_render_cmd->SetGraphicsRootConstantBufferView(1, m_main_camera_uniform->GetGpuVirtualAddress()+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
         //To Get a gpu handle from a cpu one.
 
         ID3D12DescriptorHeap* l_heaps[] = { m_device->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).Get() };

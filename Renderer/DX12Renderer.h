@@ -78,6 +78,9 @@ namespace Renderer {
 
         const DXGI_FORMAT DEPTH_BUFFER_FORMAT = DXGI_FORMAT::DXGI_FORMAT_D16_UNORM;
 
+        const Math::Matrix4 SHADOW_PREFIX = Math::Matrix4(Math::AffineTransform(Math::Matrix3::MakeScale(0.5f, -0.5f, 1.0f), Math::Vector3(0.5f, 0.5f, 0.0f)));
+
+
 
     private:
 

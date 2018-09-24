@@ -443,8 +443,7 @@ void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_rend
     for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
     {
         current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, l_mesh->m_diffuse.data(), 0);
-        //int texture_id = m_dummy_actor_textures[m_scene->dummy_actor->m_mesh->m_texture_names[submesh.m_texture_id]]->m_descriptor_heap_index;
-        current_render_cmd->SetGraphicsRoot32BitConstant(2, 0, 0);
+        current_render_cmd->SetGraphicsRoot32BitConstant(2, l_mesh->m_texture_id, 0);
         current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->m_index_count), 1, static_cast<uint32_t>(l_mesh->m_index_offset), static_cast<int32_t>(l_mesh->m_vertex_offset),0);
     }
 }
@@ -480,40 +479,39 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
     }
     m_scene = p_scene;
 
-    for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
+    for (auto l_texture_id = 0  ; l_texture_id < m_scene->dummy_actor->m_texture_names.size() ; ++l_texture_id)
     {
-        for (auto & l_texture_name_to_load : l_mesh->m_texture_names)
+        //Skip if default texture
+        auto l_texture_name_to_load = m_scene->dummy_actor->m_texture_names[l_texture_id];
+        if (l_texture_name_to_load == KEngineConstants::DEFAULT_TEXTURE_NAME) continue;
+        //Skip if texture loaded already.
+        int w, h, comp;
+        unsigned char* image = stbi_load((l_texture_name_to_load).c_str(), &w, &h, &comp, STBI_rgb_alpha);
+    
+        uint8_t black_image[4] = { 0,0,0,0 };
+    
+        //If texture not found,leave it as 1x1 black image.
+        if (!image)
         {
-            //Skip if default texture
-            if (l_texture_name_to_load == KEngineConstants::DEFAULT_TEXTURE_NAME) continue;
-            //Skip if texture loaded already.
-            if (m_dummy_actor_textures.find(l_texture_name_to_load) != m_dummy_actor_textures.end()) continue;
-            int w, h, comp;
-            unsigned char* image = stbi_load((KEngineConstants::ASSET_DIR + l_texture_name_to_load).c_str(), &w, &h, &comp, STBI_rgb_alpha);
+            DX12Texture* l_texture = new DX12Texture;
+            l_texture->Create(L"BlackImage",1, 1, 1, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, black_image);
+            m_dummy_actor_textures.push_back(std::unique_ptr<DX12Texture>(l_texture));
+        }
+        else
+        {
+            DX12Texture* l_texture = new DX12Texture;
+            l_texture->Create(L"TextureFormDisk",1, w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
+            m_dummy_actor_textures.push_back(std::unique_ptr<DX12Texture>(l_texture));
 
-            uint8_t black_image[4] = { 0,0,0,0 };
-
-            //If texture not found,leave it as 1x1 black image.
-            if (!image)
-            {
-                DX12Texture* l_texture = new DX12Texture;
-                l_texture->Create(1, 1, 1, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, black_image);
-                m_dummy_actor_textures.insert(std::pair<std::string, std::unique_ptr<DX12Texture>>(l_texture_name_to_load, std::unique_ptr<DX12Texture>(l_texture)));
+            auto& meshes_use_this_texture = m_scene->dummy_actor->m_texture_map.equal_range(l_texture_name_to_load);
+            for (auto l_mesh = meshes_use_this_texture.first; l_mesh != meshes_use_this_texture.second; ++l_mesh) {
+                m_scene->dummy_actor->m_meshes[l_mesh->second]->m_texture_id = l_texture_id;
             }
-            else
-            {
-                DX12Texture* l_texture = new DX12Texture;
-                l_texture->Create(1, w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
-                m_dummy_actor_textures.insert(std::pair<std::string, std::unique_ptr<DX12Texture>>(l_texture_name_to_load, std::unique_ptr<DX12Texture>(l_texture)));
-
-            }
-
+    
         }
 
+       
     }
-
-
-
 }
 
 

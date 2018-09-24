@@ -29,9 +29,6 @@ namespace gameplay
 
         uint32_t m_texture_id = 0;
 
-        std::unordered_multimap<std::string, int32_t> m_texture_map;
-
-        std::vector<std::string> m_texture_names;
         //It's called once data has been uploaded to GPU'S vram.
         void ReleaseMeshData();
 

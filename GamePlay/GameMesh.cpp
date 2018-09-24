@@ -7,8 +7,7 @@ namespace gameplay
     //Game Mesh contains Vertices.
     GameMesh::GameMesh()
        :m_vertices({}),
-        m_indices({}),
-        m_texture_names({})
+        m_indices({})
     {
         //Add a default texture.
         //m_texture_map.insert(std::pair<std::string, uint32_t>(KEngineConstants::DEFAULT_TEXTURE_NAME,-1));

@@ -13,6 +13,7 @@
 #include "ObjLoaderHelper.h"
 #include "GameInput.h"
 #include <GameDirector.h>
+#include <fbxsdk.h>
 
 
 HWND Win32Application::m_hwnd = nullptr;

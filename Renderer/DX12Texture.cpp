@@ -29,7 +29,7 @@ namespace Renderer
 
     static UINT BytesPerPixel(DXGI_FORMAT Format);
 
-    void DX12Texture::Create(size_t Pitch, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitialData)
+    void DX12Texture::Create(std::wstring p_name, size_t Pitch, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitialData)
     {
         m_UsageState = D3D12_RESOURCE_STATE_COPY_DEST;
 
@@ -55,16 +55,16 @@ namespace Renderer
         ASSERT_SUCCEEDED(DX12GpuDevice::GetGpuDevicePtr()->GetDX12Device()->CreateCommittedResource(&HeapProps, D3D12_HEAP_FLAG_NONE, &texDesc,
             m_UsageState, nullptr, IID_PPV_ARGS(m_pResource.ReleaseAndGetAddressOf())));
 
-        m_pResource->SetName(L"Texture");
+        m_pResource->SetName(p_name.c_str());
 
         
 
         TransferJob l_job = {};
         l_job.type = TransferJob::JobType::UPLOAD_TEXTURE;
         l_job.data = InitialData;
-        l_job.RowPitch = Pitch * BytesPerPixel(Format);
+        l_job.RowPitch = Pitch * BytesPerPixel(Format) * Width;
         l_job.SlicePitch = l_job.RowPitch * Height;
-        l_job.data_size = l_job.SlicePitch * Width;
+        l_job.data_size = l_job.SlicePitch;
         l_job.dest_res = this;
         DX12TransferManager::GetTransferManager().AddTransferJob(&l_job,true);
 
@@ -120,7 +120,7 @@ namespace Renderer
             break;
         }
 
-        Create(imageWidth, imageHeight, sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM, formattedData);
+        Create(L"TGATexture",imageWidth, imageHeight, sRGB ? DXGI_FORMAT_R8G8B8A8_UNORM_SRGB : DXGI_FORMAT_R8G8B8A8_UNORM, formattedData);
 
         delete[] formattedData;
     }
@@ -152,7 +152,7 @@ namespace Renderer
         ASSERT(fileSize >= header.Pitch * BytesPerPixel(header.Format) * header.Height + sizeof(Header),
             "Raw PIX image dump has an invalid file size");
 
-        Create(header.Pitch, header.Width, header.Height, header.Format, (uint8_t*)memBuffer + sizeof(Header));
+        Create(L"PIXTexture",header.Pitch, header.Width, header.Height, header.Format, (uint8_t*)memBuffer + sizeof(Header));
     }
 
     namespace TextureManager
@@ -202,7 +202,7 @@ namespace Renderer
             }
 
             uint32_t BlackPixel = 0;
-            ManTex->Create(1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, &BlackPixel);
+            ManTex->Create(L"DefaultBlackTexture",1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, &BlackPixel);
             return *ManTex;
         }
 
@@ -220,7 +220,7 @@ namespace Renderer
             }
 
             uint32_t WhitePixel = 0xFFFFFFFFul;
-            ManTex->Create(1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, &WhitePixel);
+            ManTex->Create(L"DefaultWhiteTexture",1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, &WhitePixel);
             return *ManTex;
         }
 
@@ -238,7 +238,7 @@ namespace Renderer
             }
 
             uint32_t MagentaPixel = 0x00FF00FF;
-            ManTex->Create(1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, &MagentaPixel);
+            ManTex->Create(L"DefaultMagentaTexture",1, 1, DXGI_FORMAT_R8G8B8A8_UNORM, &MagentaPixel);
             return *ManTex;
         }
 

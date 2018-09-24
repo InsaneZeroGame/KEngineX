@@ -4,4 +4,4 @@ file(GLOB DOT_CPP ./*.cpp)
 
 
 add_library(AssetLib STATIC ${DOT_CPP} ${DOT_H})
-target_link_libraries(AssetLib Framework libfbxsdk)
+target_link_libraries(AssetLib libfbxsdk Framework)

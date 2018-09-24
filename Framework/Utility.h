@@ -46,6 +46,8 @@ namespace Utility
         Print(buffer);
     }
 
+
+
 #ifndef RELEASE
     inline void PrintSubMessage( const char* format, ... )
     {

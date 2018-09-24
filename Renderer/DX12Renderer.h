@@ -18,6 +18,7 @@ namespace Renderer {
     {
     public:
         DX12Renderer();
+
         ~DX12Renderer();
     private:
 
@@ -46,7 +47,6 @@ namespace Renderer {
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
 
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_shadow_map_pipelineState;
-
         
         CD3DX12_VIEWPORT m_viewport;
 
@@ -61,10 +61,10 @@ namespace Renderer {
         std::unique_ptr<DX12DepthBuffer> m_shadow_map;
 
         std::unique_ptr<DX12RenderCommndBuffer> m_shadow_map_cmd;
+
         std::unique_ptr<UniformBuffer> m_shadow_map_camera_uniform;
 
-
-        std::unordered_map<std::string, std::unique_ptr<DX12Texture>> m_dummy_actor_textures;
+        std::vector<std::unique_ptr<DX12Texture>> m_dummy_actor_textures;
 
         enum {
             CAMERA_UNIFORM_SIZE = 256 //192 byte per buffer(3 buffers),256 for device alignment
@@ -79,8 +79,6 @@ namespace Renderer {
         const DXGI_FORMAT DEPTH_BUFFER_FORMAT = DXGI_FORMAT::DXGI_FORMAT_D16_UNORM;
 
         const Math::Matrix4 SHADOW_PREFIX = Math::Matrix4(Math::AffineTransform(Math::Matrix3::MakeScale(0.5f, -0.5f, 1.0f), Math::Vector3(0.5f, 0.5f, 0.0f)));
-
-
 
     private:
 

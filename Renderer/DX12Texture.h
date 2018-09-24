@@ -29,10 +29,10 @@ namespace Renderer
         DX12Texture(DescriptorHandle Handle) : m_handle(Handle) {}
     
         // Create a 1-level 2D texture
-        void Create(size_t Pitch, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitData );
-        void Create(size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitData )
+        void Create(std::wstring p_name,size_t Pitch, size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitData );
+        void Create(std::wstring p_name,size_t Width, size_t Height, DXGI_FORMAT Format, const void* InitData )
         {
-            Create(Width, Width, Height, Format, InitData);
+            Create(p_name,Width, Width, Height, Format, InitData);
         }
     
         void CreateTGAFromMemory( const void* memBuffer, size_t fileSize, bool sRGB );

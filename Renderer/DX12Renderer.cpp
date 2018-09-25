@@ -378,9 +378,9 @@ void Renderer::DX12Renderer::InitRootSignature()
         D3D12_DESCRIPTOR_RANGE diffuse_desc_range;
 
         diffuse_desc_range.BaseShaderRegister = 1;
-        //all srv except Shadow map 
+        //all srv except Shadow map and depth buffer
         diffuse_desc_range.NumDescriptors = DX12GpuDevice::DESCRIPTOR_HANDLE_MAX_NUM - 1;
-        diffuse_desc_range.OffsetInDescriptorsFromTableStart = 0;
+        diffuse_desc_range.OffsetInDescriptorsFromTableStart = 2;
         diffuse_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         diffuse_desc_range.RegisterSpace = 0;
 
@@ -415,9 +415,9 @@ void Renderer::DX12Renderer::InitRootSignature()
 
         D3D12_STATIC_SAMPLER_DESC l_default_sampler = {};
         l_default_sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
-        l_default_sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        l_default_sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-        l_default_sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        l_default_sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        l_default_sampler.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        l_default_sampler.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
         l_default_sampler.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
         l_default_sampler.RegisterSpace = 0;
         l_default_sampler.ShaderRegister = 1;

@@ -44,6 +44,7 @@ namespace Renderer
         texDesc.SampleDesc.Quality = 0;
         texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
         texDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+        
 
         D3D12_HEAP_PROPERTIES HeapProps;
         HeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;

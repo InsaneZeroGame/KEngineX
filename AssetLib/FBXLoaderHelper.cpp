@@ -107,12 +107,12 @@ namespace assetlib
         using namespace gameplay;
 
         //Setup Main Camera
-        Vector3 eye = Vector3(100, 180, 100);
-        Vector3 at = Vector3(0.0f, 0.0, 0.0f);
+        Vector3 eye = Vector3(100, 280, 100);
+        Vector3 at = Vector3(0.0f, 200.0, 0.0f);
         Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
 
         m_scene->m_main_camera.SetEyeAtUp(eye, at, up);
-        m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 25.0f, 550.0f);
+        m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 25.0f, 1250.0f);
         m_scene->m_main_camera.Update();
 
         //Setup Shadow Camera
@@ -128,9 +128,11 @@ namespace assetlib
     }
     void FBXLoader::DisplayMesh(FbxNode* pNode, gameplay::GamesScene* p_game_scene)
     {
+        DisplayString("Mesh Name: ", (char *)pNode->GetName());
+
         FbxMesh* lMesh = (FbxMesh*)pNode->GetNodeAttribute();
         //Add new mesh.
-        auto l_game_mesh = new gameplay::GameMesh;
+        auto l_game_mesh = new gameplay::GameMesh(std::string((char *)pNode->GetName()));
         FbxAMatrix matrixGeo;
         matrixGeo.SetIdentity();
         const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
@@ -141,7 +143,6 @@ namespace assetlib
         matrixGeo.SetS(lS);
         FbxAMatrix globalMatrix = pNode->EvaluateLocalTransform();
         FbxAMatrix matrix = globalMatrix * matrixGeo;
-        DisplayString("Mesh Name: ", (char *)pNode->GetName());
 
         //DisplayControlsPoints(lMesh, l_game_mesh, &matrix);
         DisplayPolygons(lMesh, l_game_mesh,&matrix);

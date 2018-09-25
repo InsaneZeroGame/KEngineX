@@ -8,9 +8,11 @@ namespace gameplay
     struct GameMesh
     {
     public:
-        GameMesh();
+        GameMesh(const std::string p_name);
 
         ~GameMesh();
+
+        std::string m_name;
 
         std::vector<float> m_vertices;
 

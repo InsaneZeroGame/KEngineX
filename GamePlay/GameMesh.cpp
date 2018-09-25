@@ -5,8 +5,9 @@ namespace gameplay
 {
 
     //Game Mesh contains Vertices.
-    GameMesh::GameMesh()
+    GameMesh::GameMesh(const std::string p_name)
        :m_vertices({}),
+        m_name(p_name),
         m_indices({})
     {
         //Add a default texture.

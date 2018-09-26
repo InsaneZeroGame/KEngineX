@@ -22,6 +22,7 @@ namespace assetlib
 
     private:
         gameplay::GamesScene* m_scene;
+        enum {FLOAT_COUNT_PER_VERTEX = 9};
     private:
         FBXLoader();
         void DisplayTextureNames(FbxProperty &pProperty, FbxString& pConnectionString);

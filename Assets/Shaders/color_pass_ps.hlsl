@@ -79,10 +79,10 @@ float pcf(float3 shadow_coord)
 
 float4 main(PSInput input) : SV_TARGET
 {
-    //float shadow = shadow_map.SampleCmpLevelZero(shadow_sampler,input.shadow_coord.xy,input.shadow_coord.z);
-    float shadow = pcf(input.shadow_coord);
+    float shadow = shadow_map.SampleCmpLevelZero(shadow_sampler,input.shadow_coord.xy,input.shadow_coord.z);
+    //float shadow = pcf(input.shadow_coord);
     float4 diffuse = mesh_diffuse[myTextureId].Sample(default_sampler, input.texture_coord);
-    return diffuse;
-    //return (diffuse * 0.75) + float4(0.25, 0.25, 0.25, 0.25) * input.color;
-    //return input.color;
+    //return diffuse;
+    return  shadow * ((diffuse  * 0.85) + float4(0.15, 0.15, 0.15, 0.15));
+    //return input.color * shadow;
 }

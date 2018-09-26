@@ -47,6 +47,8 @@ namespace Renderer {
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
 
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_shadow_map_pipelineState;
+
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> m_ui_pipelineState;
         
         CD3DX12_VIEWPORT m_viewport;
 

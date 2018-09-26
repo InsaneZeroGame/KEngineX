@@ -119,6 +119,8 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         ComPtr<ID3DBlob> vertexShader;
         ComPtr<ID3DBlob> pixelShader;
         ComPtr<ID3DBlob> shadow_map_vs;
+        ComPtr<ID3DBlob> ui_vs;
+        ComPtr<ID3DBlob> ui_ps;
 
 
 #if defined(_DEBUG)
@@ -131,6 +133,8 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &vertexShader, nullptr));
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compileFlags, 0, &pixelShader, nullptr));
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shadow_map_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &shadow_map_vs, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &ui_vs, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &ui_ps, nullptr));
 
         // Define the vertex input layout.
         std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs =
@@ -161,6 +165,18 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         psoDesc.SampleDesc.Count = 1;
         ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
     
+        //UI Pass
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC ui_pass_pso_desc = psoDesc;
+        {
+            ui_pass_pso_desc.VS = CD3DX12_SHADER_BYTECODE(ui_vs.Get());
+            ui_pass_pso_desc.PS = CD3DX12_SHADER_BYTECODE(ui_ps.Get());
+            ui_pass_pso_desc.DepthStencilState.DepthEnable = FALSE;
+            ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_ui_pipelineState)));
+        }
+
+
+
+
         //Shadow Map Pass
         D3D12_GRAPHICS_PIPELINE_STATE_DESC shadow_pso_desc = psoDesc;
         {
@@ -489,28 +505,15 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
         unsigned char* image = stbi_load((l_texture_name_to_load).c_str(), &w, &h, &comp, STBI_rgb_alpha);
     
         uint8_t black_image[4] = { 0,0,0,0 };
-    
-        //If texture not found,leave it as 1x1 black image.
-        if (!image)
-        {
-            DX12Texture* l_texture = new DX12Texture;
-            l_texture->Create(L"BlackImage",1, 1, 1, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, black_image);
-            m_dummy_actor_textures.push_back(std::unique_ptr<DX12Texture>(l_texture));
-        }
-        else
-        {
-            DX12Texture* l_texture = new DX12Texture;
-            l_texture->Create(L"TextureFormDisk",1, w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
-            m_dummy_actor_textures.push_back(std::unique_ptr<DX12Texture>(l_texture));
 
-            auto& meshes_use_this_texture = m_scene->dummy_actor->m_texture_map.equal_range(l_texture_name_to_load);
-            for (auto l_mesh = meshes_use_this_texture.first; l_mesh != meshes_use_this_texture.second; ++l_mesh) {
-                m_scene->dummy_actor->m_meshes[l_mesh->second]->m_texture_id = l_texture_id;
-            }
-    
-        }
+        DX12Texture* l_texture = new DX12Texture;
+        l_texture->Create(L"TextureFormDisk", 1, w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
+        m_dummy_actor_textures.push_back(std::unique_ptr<DX12Texture>(l_texture));
 
-       
+        auto& meshes_use_this_texture = m_scene->dummy_actor->m_texture_map.equal_range(l_texture_name_to_load);
+        for (auto l_mesh = meshes_use_this_texture.first; l_mesh != meshes_use_this_texture.second; ++l_mesh) {
+            m_scene->dummy_actor->m_meshes[l_mesh->second]->m_texture_id = l_texture_id;
+        }
     }
 }
 

@@ -26,4 +26,10 @@ namespace Renderer
         float texture_coord[2];
     };
 
+    struct UIVertex
+    {
+        float position[3];
+        float texture_coord[2];
+    };
+
 }

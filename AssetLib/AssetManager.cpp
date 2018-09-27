@@ -84,7 +84,7 @@ void assetlib::AssetManager::LoadScene(const std::string & p_name)
         {
             LoadMesh(l_mesh);
         }
-        DX12TransferManager::GetTransferManager().PrepareToRender();
+        //DX12TransferManager::GetTransferManager().PrepareToRender();
     }
 
 }

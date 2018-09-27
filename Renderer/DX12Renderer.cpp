@@ -172,7 +172,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
             ui_pass_pso_desc.VS = CD3DX12_SHADER_BYTECODE(ui_vs.Get());
             ui_pass_pso_desc.PS = CD3DX12_SHADER_BYTECODE(ui_ps.Get());
             ui_pass_pso_desc.DepthStencilState.DepthEnable = FALSE;
-            ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_ui_pipelineState)));
+            ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&ui_pass_pso_desc, IID_PPV_ARGS(&m_ui_pipelineState)));
         }
 
 
@@ -227,6 +227,15 @@ void Renderer::DX12Renderer::WaitForPreviousFrame()
 
 void Renderer::DX12Renderer::RecordGraphicsCmd()
 {
+
+    static bool is_first_frame = true;
+
+    if (is_first_frame)
+    {
+        is_first_frame = false;
+        DX12TransferManager::GetTransferManager().PrepareToRender();
+    }
+
     //Shadow Map Pass
     {
         m_shadow_map_cmd->Reset();

@@ -22,6 +22,8 @@ namespace assetlib
         {
             return &GetAssertManager();
         }
+
+        
         
         ~AssetManager();
 
@@ -30,6 +32,8 @@ namespace assetlib
         virtual void Destory() override;
 
         void LoadScene(const std::string& p_name);
+
+        void LoadMesh(gameplay::GameMesh* p_mesh);
 
         __forceinline std::shared_ptr<gameplay::GamesScene> GetScene(const std::string& p_name)
         {

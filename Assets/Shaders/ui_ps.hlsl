@@ -2,7 +2,7 @@
 
 
 
-float4 main(UIPSInput input)
+float4 main(UIPSInput input) : SV_TARGET
 {
     return input.color;
 }

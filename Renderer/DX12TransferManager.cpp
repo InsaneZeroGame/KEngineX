@@ -114,12 +114,16 @@ void Renderer::DX12TransferManager::UploadDataToVertexBuffer(TransferJob* p_job)
 {
     memcpy(m_vertex_upload_buffer->data + m_vertex_buffer->offset, p_job->data, p_job->data_size);
     m_vertex_buffer->offset += p_job->data_size;
+    p_job->vertex_offset = m_vertex_id_offset;
+    m_vertex_id_offset += (p_job->vertex_count);
 }
 
 void Renderer::DX12TransferManager::UploadDataToIndexBuffer(TransferJob * p_job)
 {
     memcpy(m_index_upload_buffer->data + m_index_buffer->offset, p_job->data, p_job->data_size);
     m_index_buffer->offset += p_job->data_size;
+    p_job->index_offet = m_index_id_offset;
+    m_index_id_offset += p_job->index_count;
 }
 
 void Renderer::DX12TransferManager::UploadTexture(TransferJob * p_job)

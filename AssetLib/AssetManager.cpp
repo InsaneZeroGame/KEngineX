@@ -71,7 +71,6 @@ void assetlib::AssetManager::Destory()
 
 void assetlib::AssetManager::LoadScene(const std::string & p_name)
 {
-
     using namespace Renderer;
 
     std::shared_ptr<gameplay::GamesScene> l_scene = assetlib::FBXLoader::GetFbxLoader().LoadFBX(KEngineConstants::MODEL_ASSET_DIR + p_name);
@@ -80,36 +79,45 @@ void assetlib::AssetManager::LoadScene(const std::string & p_name)
     m_scenes[p_name] = l_scene;
 
     {
-        
         // Define the geometry for a triangle.
-
         for (auto& l_mesh : l_scene->dummy_actor->m_meshes) 
         {
-            const uint64_t vertexBufferSize = static_cast<uint64_t>(l_mesh->m_vertices.size()) * sizeof(float);
-
-            //Vertex Job
-            TransferJob l_vertex_upload_job = {};
-            l_vertex_upload_job.data = l_mesh->m_vertices.data();
-            l_vertex_upload_job.data_size = vertexBufferSize;
-            l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX;
-
-            DX12TransferManager::GetTransferManager().AddTransferJob(&l_vertex_upload_job, true);
-
-            //Index Job
-            TransferJob l_index_upload_job = {};
-            l_index_upload_job.data = l_mesh->m_indices.data();
-            l_index_upload_job.data_size = sizeof(uint32_t) * l_mesh->m_indices.size();
-            l_index_upload_job.type = TransferJob::JobType::UPLOAD_INDEX;
-
-            DX12TransferManager::GetTransferManager().AddTransferJob(&l_index_upload_job, true);
-
-            //Release system memory used by vertices and indices.
-            //They are useless now since we don't readback or reuse it.
-            l_mesh->ReleaseMeshData();
+            LoadMesh(l_mesh);
         }
         DX12TransferManager::GetTransferManager().PrepareToRender();
     }
 
+}
+
+void assetlib::AssetManager::LoadMesh(gameplay::GameMesh * l_mesh)
+{
+    using namespace Renderer;
+
+    const uint64_t vertexBufferSize = static_cast<uint64_t>(l_mesh->m_vertices.size()) * sizeof(float);
+
+    //Vertex Job
+    TransferJob l_vertex_upload_job = {};
+    l_vertex_upload_job.data = l_mesh->m_vertices.data();
+    l_vertex_upload_job.data_size = vertexBufferSize;
+    l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX;
+    l_vertex_upload_job.vertex_count = l_mesh->m_vertices.size() / KEngineConstants::FLOAT_COUNT_PER_VERTEX;
+
+    DX12TransferManager::GetTransferManager().AddTransferJob(&l_vertex_upload_job, true);
+    l_mesh->m_vertex_offset = l_vertex_upload_job.vertex_offset;
+
+    //Index Job
+    TransferJob l_index_upload_job = {};
+    l_index_upload_job.data = l_mesh->m_indices.data();
+    l_index_upload_job.data_size = sizeof(uint32_t) * l_mesh->m_indices.size();
+    l_index_upload_job.type = TransferJob::JobType::UPLOAD_INDEX;
+    l_index_upload_job.index_count = l_mesh->m_indices.size();
+
+    DX12TransferManager::GetTransferManager().AddTransferJob(&l_index_upload_job, true);
+    l_mesh->m_index_offset = l_index_upload_job.index_offet;
+
+    //Release system memory used by vertices and indices.
+    //They are useless now since we don't readback or reuse it.
+    l_mesh->ReleaseMeshData();
 }
 
 

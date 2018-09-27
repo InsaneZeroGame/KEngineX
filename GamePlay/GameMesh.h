@@ -34,8 +34,8 @@ namespace gameplay
         //It's called once data has been uploaded to GPU'S vram.
         void ReleaseMeshData();
 
-        void AddVertices(const std::vector<float>& p_vertices,uint64_t p_offet);
-        void AddIndices(const std::vector<uint32_t>& p_indices,uint64_t p_offset);
+        void AddVertices(const std::vector<float>& p_vertices);
+        void AddIndices(const std::vector<uint32_t>& p_indices);
         
     };//class GameMesh
 }//namespace gameplay

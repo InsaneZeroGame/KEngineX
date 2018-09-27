@@ -26,6 +26,10 @@ namespace Renderer
 
         }Jobtype;
 
+        uint64_t vertex_count = 0;
+        uint64_t index_count = 0;
+        uint64_t vertex_offset = 0;
+        uint64_t index_offet = 0;
         JobType type;
         const void* data;
         uint64_t data_size;
@@ -77,6 +81,11 @@ namespace Renderer
         {
             return m_index_buffer->IndexBufferView(0,static_cast<uint32_t>(m_index_buffer->GetBufferSize()),true);
         }
+
+        //vertex id offset in the vertex buffer.
+        uint64_t m_vertex_id_offset = 0;
+        //Index id offset in the index buffer.
+        uint64_t m_index_id_offset = 0;
 
 
     private:

@@ -31,16 +31,16 @@ namespace gameplay
         m_indices.swap(l_release_indices);
 
     }
-    void GameMesh::AddVertices(const std::vector<float>& p_vertices, uint64_t p_offet)
+    void GameMesh::AddVertices(const std::vector<float>& p_vertices)
     {
         m_vertices = p_vertices;
-        m_vertex_offset = p_offet;
+        m_vertex_count = p_vertices.size() / KEngineConstants::FLOAT_COUNT_PER_VERTEX;
 
     }
-    void GameMesh::AddIndices(const std::vector<uint32_t>& p_indices, uint64_t p_offet)
+    void GameMesh::AddIndices(const std::vector<uint32_t>& p_indices)
     {
         m_indices = p_indices;
-        m_index_offset;
+        m_index_count = p_indices.size();
     }
 
 

@@ -12,6 +12,7 @@
 #include <GameCamera.h>
 #include <unordered_map>
 #include "DX12Texture.h"
+#include "GameUIActor.h"
 
 namespace Renderer {
     class DX12Renderer final: public IRenderer
@@ -67,6 +68,9 @@ namespace Renderer {
         std::unique_ptr<UniformBuffer> m_shadow_map_camera_uniform;
 
         std::vector<std::unique_ptr<DX12Texture>> m_dummy_actor_textures;
+
+        std::unique_ptr<gameplay::GameUIActor> dummy_depth_debug;
+
 
         enum {
             CAMERA_UNIFORM_SIZE = 256 //192 byte per buffer(3 buffers),256 for device alignment

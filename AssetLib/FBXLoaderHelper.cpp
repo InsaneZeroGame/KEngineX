@@ -1,13 +1,12 @@
 #include "FBXLoaderHelper.h"
 #include <fbxsdk.h>
 #include <KLogger.h>
+#include "EngineConfig.h"
+#include "AssetManager.h"
 #define MAT_HEADER_LENGTH 200
 
 static FbxManager* pManager;
-//vertex id offset in the vertex buffer.
-static uint64_t s_vertex_offset = 0;
-//Index id offset in the index buffer.
-static uint64_t s_index_offset = 0;
+
 
 
 namespace assetlib
@@ -15,6 +14,7 @@ namespace assetlib
 
     FBXLoader::FBXLoader()
     {
+
         InitFBXSDK();
     }
 
@@ -236,9 +236,11 @@ namespace assetlib
         FbxVector4* lControlPoints = pMesh->GetControlPoints();
 
         //Get vertex offset from of current vertex buffer.
-        p_game_mesh->m_vertex_offset = s_vertex_offset;
+        //p_game_mesh->m_vertex_offset = assetlib::AssetManager::GetAssertManager().m_vertex_id_offset;
         //Get index offset from of current index buffer.
-        p_game_mesh->m_index_offset = s_index_offset;
+        //p_game_mesh->m_index_offset = assetlib::AssetManager::GetAssertManager().m_index_id_offset;
+
+        using namespace KEngineConstants;
 
         p_game_mesh->m_vertices.resize(lControlPointsCount * FLOAT_COUNT_PER_VERTEX);
 
@@ -367,8 +369,8 @@ namespace assetlib
             } // for polygonSize
         } // for polygonCount
         p_game_mesh->m_index_count = p_game_mesh->m_indices.size();
-        s_index_offset += p_game_mesh->m_indices.size();
-        s_vertex_offset += lControlPointsCount;
+        //assetlib::AssetManager::GetAssertManager().m_index_id_offset += p_game_mesh->m_indices.size();
+        //assetlib::AssetManager::GetAssertManager().m_vertex_id_offset += lControlPointsCount;
 
     }
 

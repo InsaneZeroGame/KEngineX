@@ -1,5 +1,6 @@
 #include "DX12Renderer.h"
 #include "DXSampleHelper.h"
+#include "AssetManager.h"
 #include <future>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -134,7 +135,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compileFlags, 0, &pixelShader, nullptr));
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shadow_map_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &shadow_map_vs, nullptr));
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &ui_vs, nullptr));
-        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &ui_ps, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compileFlags, 0, &ui_ps, nullptr));
 
         // Define the vertex input layout.
         std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs =
@@ -298,6 +299,12 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         //Render Scene
         RenderScene(current_render_cmd);
         // Indicate that the back buffer will now be used to present.
+
+        //Render UI
+        current_render_cmd->SetPipelineState(m_ui_pipelineState.Get());
+        current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->m_index_count), 1, static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->m_index_offset), static_cast<int32_t>(dummy_depth_debug->m_meshes[0]->m_vertex_offset), 0);
+
+
         current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
         DX12TransferManager::GetTransferManager().TransitionResource(*m_shadow_map, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 
@@ -373,9 +380,6 @@ void Renderer::DX12Renderer::InitRootSignature()
         l_texture_id_parameter.Constants.Num32BitValues = 1;
         l_texture_id_parameter.Constants.RegisterSpace = 0;
         l_texture_id_parameter.Constants.ShaderRegister = 2;
-
-
-        
 
 
         //DesciptorTable
@@ -464,6 +468,7 @@ void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_rend
     }
 }
 
+
 void Renderer::DX12Renderer::SetVertexAndIndexBuffer(ID3D12GraphicsCommandList * p_cmd)
 {   
     auto vertexbufferview = DX12TransferManager::GetTransferManager().GetVertexBufferView();
@@ -515,6 +520,27 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
             m_scene->dummy_actor->m_meshes[l_mesh->second]->m_texture_id = l_texture_id;
         }
     }
+
+
+    //Init UI
+    dummy_depth_debug = std::unique_ptr<gameplay::GameUIActor>(new gameplay::GameUIActor("Dummy UI"));
+    auto l_ui_mesh = new gameplay::GameMesh("dummy_ui_mesh");
+
+    std::vector<float> l_ui_vertices = 
+    {
+        -0.2f,0.2f,0.0f,0.0,1.0f,0.0,1.0,0.0,0.0,
+        -0.2f,-0.2f,0.0f,0.0,1.0f,0.0,1.0,0.0,0.0,
+        0.2f,-0.2f,0.0f,0.0,1.0f,0.0,1.0,0.0,0.0,
+        0.2f,0.2f,0.0f,0.0,1.0f,0.0,1.0,0.0,0.0,
+    };
+    std::vector<uint32_t> l_ui_indices = 
+    {
+        0,1,2,0,2,3
+    };
+    l_ui_mesh->AddVertices(l_ui_vertices);
+    l_ui_mesh->AddIndices(l_ui_indices);
+    assetlib::AssetManager::GetAssertManager().LoadMesh(l_ui_mesh);
+    dummy_depth_debug->AddMesh(l_ui_mesh);
 }
 
 

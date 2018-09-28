@@ -1,10 +1,11 @@
 #include "GameActor.h"
+#include <EngineConfig.h>
 
 gameplay::GameActor::GameActor(const std::string& p_name)
     :SceneNode(p_name),
     m_meshes({})
 {
-    m_texture_names.push_back("C:/Users/angl/Documents/GitHub/KEngineX/Assets/textures/default_texture1.jpg");
+    m_texture_names.push_back(KEngineConstants::ASSET_DIR + "\\textures\\default_texture1.jpg");
 }
 
 

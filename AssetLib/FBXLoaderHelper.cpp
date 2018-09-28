@@ -112,7 +112,7 @@ namespace assetlib
         Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
 
         m_scene->m_main_camera.SetEyeAtUp(eye, at, up);
-        m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 11.0f, 22.0f);
+        m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 11.0f, 25.0f);
         m_scene->m_main_camera.Update();
 
         //Setup Shadow Camera
@@ -121,7 +121,7 @@ namespace assetlib
         up = Vector3(0.0f, 1.0f, 0.0f);
 
         m_scene->m_shadow_camera.SetEyeAtUp(eye, at, up);
-        m_scene->m_shadow_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 11.0f, 22.0f);
+        m_scene->m_shadow_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 11.0f, 25.0f);
         m_scene->m_shadow_camera.Update();
 
         return std::unique_ptr<gameplay::GamesScene>(m_scene);
@@ -313,14 +313,14 @@ namespace assetlib
                         switch (leUV->GetReferenceMode())
                         {
                         case FbxGeometryElement::eDirect:
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 7] = leUV->GetDirectArray().GetAt(lControlPointIndex).Buffer()[0];
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 8] = leUV->GetDirectArray().GetAt(lControlPointIndex).Buffer()[1];
+                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 7] = static_cast<float>(leUV->GetDirectArray().GetAt(lControlPointIndex).Buffer()[0]);
+                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 8] = static_cast<float>(leUV->GetDirectArray().GetAt(lControlPointIndex).Buffer()[1]);
                             break;
                         case FbxGeometryElement::eIndexToDirect:
                         {
                             int id = leUV->GetIndexArray().GetAt(lControlPointIndex);
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 7] = leUV->GetDirectArray().GetAt(id).Buffer()[0];
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 8] = leUV->GetDirectArray().GetAt(id).Buffer()[1];
+                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 7] = static_cast<float>(leUV->GetDirectArray().GetAt(id).Buffer()[0]);
+                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 8] = static_cast<float>(leUV->GetDirectArray().GetAt(id).Buffer()[1]);
 
                         }
                         break;
@@ -346,8 +346,8 @@ namespace assetlib
                                 //the UV index depends on the reference mode
                                 //int lUVIndex = leUV->GetIndexArray().GetAt(vertexId);
                                 lUVValue = leUV->GetDirectArray().GetAt(lTextureUVIndex);
-                                l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 7] = lUVValue.Buffer()[0];
-                                l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 8] = lUVValue.Buffer()[1];
+                                l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 7] = static_cast<float>(lUVValue.Buffer()[0]);
+                                l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 8] = static_cast<float>(lUVValue.Buffer()[1]);
                                 vertexId++;
 
                             }

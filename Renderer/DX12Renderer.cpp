@@ -186,7 +186,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
             shadow_pso_desc.RasterizerState.DepthBias = -10;
             shadow_pso_desc.RasterizerState.SlopeScaledDepthBias = -2.5f;
             shadow_pso_desc.RasterizerState.DepthBiasClamp = 0.0f;
-            shadow_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_FRONT;
+            shadow_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
             shadow_pso_desc.NumRenderTargets = 0;
             shadow_pso_desc.RTVFormats[0] = DXGI_FORMAT_UNKNOWN;
             shadow_pso_desc.BlendState.IndependentBlendEnable = FALSE;
@@ -537,10 +537,10 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
 
     std::vector<float> l_ui_vertices = 
     {
-        0.8f + -0.2f,0.8f + 0.2f,0.0f,0.0,1.0f,0.0,1.0,0.0,0.0,
-        0.8f + -0.2f,0.8f + -0.2f,0.0f,0.0,1.0f,0.0,1.0,1.0,0.0,
-        0.8f + 0.2f ,0.8f + -0.2f,0.0f,0.0,1.0f,0.0,1.0,1.0,1.0,
-        0.8f + 0.2f ,0.8f + 0.2f,0.0f,0.0,1.0f,0.0,1.0,0.0,1.0,
+        0.75f + -0.2f,0.75f + 0.2f,0.0f,0.0,1.0f,0.0,1.0,0.0,0.0,
+        0.75f + -0.2f,0.75f + -0.2f,0.0f,0.0,1.0f,0.0,1.0,0.0,1.0,
+        0.75f + 0.2f ,0.75f + -0.2f,0.0f,0.0,1.0f,0.0,1.0,1.0,1.0,
+        0.75f + 0.2f ,0.75f + 0.2f,0.0f,0.0,1.0f,0.0,1.0,1.0,0.0,
     };
     std::vector<uint32_t> l_ui_indices = 
     {

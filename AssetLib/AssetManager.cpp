@@ -93,27 +93,27 @@ void assetlib::AssetManager::LoadMesh(gameplay::GameMesh * l_mesh)
 {
     using namespace Renderer;
 
-    const uint64_t vertexBufferSize = static_cast<uint64_t>(l_mesh->m_vertices.size()) * sizeof(float);
+    const uint64_t vertexBufferSize = static_cast<uint64_t>(l_mesh->GetVertices().size()) * sizeof(float);
 
     //Vertex Job
     TransferJob l_vertex_upload_job = {};
-    l_vertex_upload_job.data = l_mesh->m_vertices.data();
+    l_vertex_upload_job.data = l_mesh->GetVertices().data();
     l_vertex_upload_job.data_size = vertexBufferSize;
     l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX;
-    l_vertex_upload_job.vertex_count = l_mesh->m_vertices.size() / KEngineConstants::FLOAT_COUNT_PER_VERTEX;
+    l_vertex_upload_job.vertex_count = l_mesh->GetVertices().size() / KEngineConstants::FLOAT_COUNT_PER_VERTEX;
 
     DX12TransferManager::GetTransferManager().AddTransferJob(&l_vertex_upload_job, true);
-    l_mesh->m_vertex_offset = l_vertex_upload_job.vertex_offset;
+    l_mesh->SetVertexOffsetInBuffer(l_vertex_upload_job.vertex_offset);
 
     //Index Job
     TransferJob l_index_upload_job = {};
-    l_index_upload_job.data = l_mesh->m_indices.data();
-    l_index_upload_job.data_size = sizeof(uint32_t) * l_mesh->m_indices.size();
+    l_index_upload_job.data = l_mesh->GetIndices().data();
+    l_index_upload_job.data_size = sizeof(uint32_t) * l_mesh->GetIndexCount();
     l_index_upload_job.type = TransferJob::JobType::UPLOAD_INDEX;
-    l_index_upload_job.index_count = l_mesh->m_indices.size();
+    l_index_upload_job.index_count = l_mesh->GetIndexCount();
 
     DX12TransferManager::GetTransferManager().AddTransferJob(&l_index_upload_job, true);
-    l_mesh->m_index_offset = l_index_upload_job.index_offet;
+    l_mesh->SetIndexOffsetInBuffer(l_index_upload_job.index_offet);
 
     //Release system memory used by vertices and indices.
     //They are useless now since we don't readback or reuse it.

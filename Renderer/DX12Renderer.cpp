@@ -311,7 +311,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
 
         //Render UI
         current_render_cmd->SetPipelineState(m_ui_pipelineState.Get());
-        current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->m_index_count), 1, static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->m_index_offset), static_cast<int32_t>(dummy_depth_debug->m_meshes[0]->m_vertex_offset), 0);
+        current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexCount()), 1, static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexOffsetInBuffer()), static_cast<int32_t>(dummy_depth_debug->m_meshes[0]->GetVertexOffsetInBuffer()), 0);
 
 
         current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -471,9 +471,9 @@ void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_rend
 {
     for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
     {
-        current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, l_mesh->m_diffuse.data(), 0);
-        current_render_cmd->SetGraphicsRoot32BitConstant(2, l_mesh->m_texture_id, 0);
-        current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->m_index_count), 1, static_cast<uint32_t>(l_mesh->m_index_offset), static_cast<int32_t>(l_mesh->m_vertex_offset),0);
+        current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, l_mesh->GetDiffuseMaterial(), 0);
+        current_render_cmd->SetGraphicsRoot32BitConstant(2, l_mesh->GetTextureId(), 0);
+        current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->GetIndexCount()), 1, static_cast<uint32_t>(l_mesh->GetIndexOffsetInBuffer()), static_cast<int32_t>(l_mesh->GetVertexOffsetInBuffer()),0);
     }
 }
 
@@ -526,7 +526,7 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
 
         auto& meshes_use_this_texture = m_scene->dummy_actor->m_texture_map.equal_range(l_texture_name_to_load);
         for (auto l_mesh = meshes_use_this_texture.first; l_mesh != meshes_use_this_texture.second; ++l_mesh) {
-            m_scene->dummy_actor->m_meshes[l_mesh->second]->m_texture_id = l_texture_id;
+            m_scene->dummy_actor->m_meshes[l_mesh->second]->SetTextureId(l_texture_id);
         }
     }
 

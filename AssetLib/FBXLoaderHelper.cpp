@@ -112,16 +112,16 @@ namespace assetlib
         Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
 
         m_scene->m_main_camera.SetEyeAtUp(eye, at, up);
-        m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 11.0f, 25.0f);
+        m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 8.0f, 25.0f);
         m_scene->m_main_camera.Update();
 
         //Setup Shadow Camera
-        eye = Vector3(-10.0f, 10.0f, 10.0f);
+        eye = Vector3(10.0f, 10.0f, 10.0f);
         at = Vector3(0.0f, 0.0f, 0.0f);
         up = Vector3(0.0f, 1.0f, 0.0f);
 
         m_scene->m_shadow_camera.SetEyeAtUp(eye, at, up);
-        m_scene->m_shadow_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 11.0f, 25.0f);
+        m_scene->m_shadow_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 8.0f, 25.0f);
         m_scene->m_shadow_camera.Update();
 
         return std::unique_ptr<gameplay::GamesScene>(m_scene);

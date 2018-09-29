@@ -309,7 +309,10 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         RenderScene(current_render_cmd);
         // Indicate that the back buffer will now be used to present.
 
-        //Render UI
+        //Render UI(Scene Related Debug Content)
+
+
+        //Render UI(Framebuffer Viewer)
         current_render_cmd->SetPipelineState(m_ui_pipelineState.Get());
         current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexCount()), 1, static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexOffsetInBuffer()), static_cast<int32_t>(dummy_depth_debug->m_meshes[0]->GetVertexOffsetInBuffer()), 0);
 
@@ -530,24 +533,9 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
         }
     }
 
-
     //Init UI
     dummy_depth_debug = std::unique_ptr<gameplay::GameUIActor>(new gameplay::GameUIActor("Dummy UI"));
-    auto l_ui_mesh = new gameplay::GameMesh("dummy_ui_mesh");
-
-    std::vector<float> l_ui_vertices = 
-    {
-        0.75f + -0.2f,0.75f + 0.2f,0.0f,0.0,1.0f,0.0,1.0,0.0,0.0,
-        0.75f + -0.2f,0.75f + -0.2f,0.0f,0.0,1.0f,0.0,1.0,0.0,1.0,
-        0.75f + 0.2f ,0.75f + -0.2f,0.0f,0.0,1.0f,0.0,1.0,1.0,1.0,
-        0.75f + 0.2f ,0.75f + 0.2f,0.0f,0.0,1.0f,0.0,1.0,1.0,0.0,
-    };
-    std::vector<uint32_t> l_ui_indices = 
-    {
-        0,1,2,0,2,3
-    };
-    l_ui_mesh->AddVertices(l_ui_vertices);
-    l_ui_mesh->AddIndices(l_ui_indices);
+    auto l_ui_mesh = new gameplay::GameMesh("dummy_ui_mesh",Math::Rect(Math::Vector3(0.7,1.0,0.0),0.3));
     assetlib::AssetManager::GetAssertManager().LoadMesh(l_ui_mesh);
     dummy_depth_debug->AddMesh(l_ui_mesh);
 }

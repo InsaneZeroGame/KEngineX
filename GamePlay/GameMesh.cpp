@@ -10,10 +10,25 @@ namespace gameplay
         m_name(p_name),
         m_indices({})
     {
-        //Add a default texture.
-        //m_texture_map.insert(std::pair<std::string, uint32_t>(KEngineConstants::DEFAULT_TEXTURE_NAME,-1));
-        //m_texture_names.push_back(KEngineConstants::DEFAULT_TEXTURE_NAME);
+        
     }
+
+    GameMesh::GameMesh(const std::string p_name,const Math::Rect& p_rect, const std::array<float, 3>& p_color)
+        :m_name(p_name)
+    {
+        AddVertices
+        ({
+            //Top left
+            p_rect.m_pos[0].GetX(),p_rect.m_pos[0].GetY(),p_rect.m_pos[0].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,0.0f,0.0f,
+            p_rect.m_pos[1].GetX(),p_rect.m_pos[1].GetY(),p_rect.m_pos[1].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,0.0f,1.0f,
+            p_rect.m_pos[2].GetX(),p_rect.m_pos[2].GetY(),p_rect.m_pos[2].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,1.0f,1.0f,
+            p_rect.m_pos[3].GetX(),p_rect.m_pos[3].GetY(),p_rect.m_pos[3].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,1.0f,0.0f,
+
+         });
+        AddIndices({0,1,2,0,2,3});
+    }
+
+
 
    
     void GameMesh::ReleaseMeshData()
@@ -38,6 +53,18 @@ namespace gameplay
 
     }
     void GameMesh::AddIndices(const std::vector<uint32_t>& p_indices)
+    {
+        m_indices = p_indices;
+        m_index_count = p_indices.size();
+    }
+
+    void GameMesh::AddVertices(std::vector<float>&& p_vertices)
+    {
+        m_vertices = p_vertices;
+        m_vertex_count = p_vertices.size() / KEngineConstants::FLOAT_COUNT_PER_VERTEX;
+
+    }
+    void GameMesh::AddIndices(std::vector<uint32_t>&& p_indices)
     {
         m_indices = p_indices;
         m_index_count = p_indices.size();

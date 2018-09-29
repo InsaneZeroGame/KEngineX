@@ -3,6 +3,8 @@
 #include <array>
 #include <unordered_map>
 #include <cassert>
+#include <Math/Rect.h>
+
 namespace gameplay
 {
     struct GameMesh
@@ -12,6 +14,8 @@ namespace gameplay
 
         GameMesh(const std::string p_name);
 
+        GameMesh(const std::string p_name, const Math::Rect& p_rect, const std::array<float, 3>& p_color =KEngineConstants::MESH_DEFAULT_COLOR);
+        
         ~GameMesh();
 
         //It's called once data has been uploaded to GPU'S vram.
@@ -20,6 +24,10 @@ namespace gameplay
         void AddVertices(const std::vector<float>& p_vertices);
 
         void AddIndices(const std::vector<uint32_t>& p_indices);
+
+        void AddVertices(std::vector<float>&& p_vertices);
+
+        void AddIndices(std::vector<uint32_t>&& p_indices);
 
         __forceinline std::vector<float>& GetVertices()
         {
@@ -79,7 +87,6 @@ namespace gameplay
 
     private:
 
-        
 
         std::string m_name;
 

@@ -93,14 +93,14 @@ void assetlib::AssetManager::LoadMesh(gameplay::GameMesh * l_mesh)
 {
     using namespace Renderer;
 
-    const uint64_t vertexBufferSize = static_cast<uint64_t>(l_mesh->GetVertices().size()) * sizeof(float);
+    const uint64_t vertexBufferSize = static_cast<uint64_t>(l_mesh->GetVertices().size()) * sizeof(Vertex);
 
     //Vertex Job
     TransferJob l_vertex_upload_job = {};
     l_vertex_upload_job.data = l_mesh->GetVertices().data();
     l_vertex_upload_job.data_size = vertexBufferSize;
     l_vertex_upload_job.type = TransferJob::JobType::UPLOAD_VERTEX;
-    l_vertex_upload_job.vertex_count = l_mesh->GetVertices().size() / KEngineConstants::FLOAT_COUNT_PER_VERTEX;
+    l_vertex_upload_job.vertex_count = l_mesh->GetVertexCount();
 
     DX12TransferManager::GetTransferManager().AddTransferJob(&l_vertex_upload_job, true);
     l_mesh->SetVertexOffsetInBuffer(l_vertex_upload_job.vertex_offset);

@@ -21,15 +21,15 @@ namespace gameplay
         //It's called once data has been uploaded to GPU'S vram.
         void ReleaseMeshData();
 
-        void AddVertices(const std::vector<float>& p_vertices);
+        void AddVertices(const std::vector<Renderer::Vertex>& p_vertices);
 
         void AddIndices(const std::vector<uint32_t>& p_indices);
 
-        void AddVertices(std::vector<float>&& p_vertices);
+        void AddVertices(std::vector<Renderer::Vertex>&& p_vertices);
 
         void AddIndices(std::vector<uint32_t>&& p_indices);
 
-        __forceinline std::vector<float>& GetVertices()
+        __forceinline std::vector<Renderer::Vertex>& GetVertices()
         {
             return m_vertices;
         }
@@ -45,9 +45,20 @@ namespace gameplay
             m_index_count++;
         };
 
+        __forceinline void AddVertex(Renderer::Vertex p_vertex)
+        {
+            m_vertices.push_back(p_vertex);
+            m_vertex_count++;
+        };
+
         __forceinline uint64_t GetIndexCount() const
         {
             return m_index_count;
+        }
+
+        __forceinline uint64_t GetVertexCount() const
+        {
+            return m_vertex_count;
         }
 
         __forceinline uint64_t GetIndexOffsetInBuffer() const
@@ -90,7 +101,7 @@ namespace gameplay
 
         std::string m_name;
 
-        std::vector<float> m_vertices;
+        std::vector<Renderer::Vertex> m_vertices;
 
         std::vector<uint32_t> m_indices;
 

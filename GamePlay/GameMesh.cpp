@@ -16,15 +16,14 @@ namespace gameplay
     GameMesh::GameMesh(const std::string p_name,const Math::Rect& p_rect, const std::array<float, 3>& p_color)
         :m_name(p_name)
     {
-        AddVertices
-        ({
-            //Top left
-            p_rect.m_pos[0].GetX(),p_rect.m_pos[0].GetY(),p_rect.m_pos[0].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,0.0f,0.0f,
-            p_rect.m_pos[1].GetX(),p_rect.m_pos[1].GetY(),p_rect.m_pos[1].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,0.0f,1.0f,
-            p_rect.m_pos[2].GetX(),p_rect.m_pos[2].GetY(),p_rect.m_pos[2].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,1.0f,1.0f,
-            p_rect.m_pos[3].GetX(),p_rect.m_pos[3].GetY(),p_rect.m_pos[3].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,1.0f,0.0f,
+        //Top Left
+        auto tl = Renderer::Vertex({ p_rect.m_pos[0].GetX(),p_rect.m_pos[0].GetY(),p_rect.m_pos[0].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,0.0f,0.0f });
+        auto bl = Renderer::Vertex({ p_rect.m_pos[1].GetX(),p_rect.m_pos[1].GetY(),p_rect.m_pos[1].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,0.0f,1.0f });
+        //Bottom Right
+        auto br = Renderer::Vertex({ p_rect.m_pos[2].GetX(),p_rect.m_pos[2].GetY(),p_rect.m_pos[2].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,1.0f,1.0f });
+        auto tr = Renderer::Vertex({ p_rect.m_pos[3].GetX(),p_rect.m_pos[3].GetY(),p_rect.m_pos[3].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,1.0f,0.0f });
 
-         });
+        AddVertices({tl,bl,br,tr,});
         AddIndices({0,1,2,0,2,3});
     }
 
@@ -37,7 +36,7 @@ namespace gameplay
         assert(m_vertices.size() > 0);
         assert(m_indices.size() > 0);
 
-        std::vector<float> l_release_vertices;
+        std::vector<Renderer::Vertex> l_release_vertices;
         l_release_vertices.clear();
         m_vertices.swap(l_release_vertices);
 
@@ -46,10 +45,10 @@ namespace gameplay
         m_indices.swap(l_release_indices);
 
     }
-    void GameMesh::AddVertices(const std::vector<float>& p_vertices)
+    void GameMesh::AddVertices(const std::vector<Renderer::Vertex>& p_vertices)
     {
         m_vertices = p_vertices;
-        m_vertex_count = p_vertices.size() / KEngineConstants::FLOAT_COUNT_PER_VERTEX;
+        m_vertex_count = p_vertices.size();
 
     }
     void GameMesh::AddIndices(const std::vector<uint32_t>& p_indices)
@@ -58,10 +57,10 @@ namespace gameplay
         m_index_count = p_indices.size();
     }
 
-    void GameMesh::AddVertices(std::vector<float>&& p_vertices)
+    void GameMesh::AddVertices(std::vector<Renderer::Vertex>&& p_vertices)
     {
         m_vertices = p_vertices;
-        m_vertex_count = p_vertices.size() / KEngineConstants::FLOAT_COUNT_PER_VERTEX;
+        m_vertex_count = p_vertices.size();
 
     }
     void GameMesh::AddIndices(std::vector<uint32_t>&& p_indices)

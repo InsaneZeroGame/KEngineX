@@ -242,9 +242,9 @@ namespace assetlib
 
         using namespace KEngineConstants;
 
-        auto& l_mesh_vertices = p_game_mesh->GetVertices();
+        auto l_mesh_vertices = std::vector<Renderer::Vertex>(lControlPointsCount);
+        //l_mesh_vertices.resize(lControlPointsCount);
 
-        l_mesh_vertices.resize(lControlPointsCount * FLOAT_COUNT_PER_VERTEX);
 
         int vertexId = 0;
         for (i = 0; i < lPolygonCount; i++)
@@ -255,9 +255,9 @@ namespace assetlib
                 //Pos
                 int lControlPointIndex = pMesh->GetPolygonVertex(i, j);
                 auto transformed_control_points = p_transform_matrix->MultT(lControlPoints[lControlPointIndex]);
-                l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 0] = static_cast<float>(transformed_control_points.Buffer()[0]);
-                l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 1] = static_cast<float>(transformed_control_points.Buffer()[1]);
-                l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 2] = static_cast<float>(transformed_control_points.Buffer()[2]);
+                l_mesh_vertices[lControlPointIndex].m_nomral_vertex.position[0] = static_cast<float>(transformed_control_points.Buffer()[0]);
+                l_mesh_vertices[lControlPointIndex].m_nomral_vertex.position[1] = static_cast<float>(transformed_control_points.Buffer()[1]);
+                l_mesh_vertices[lControlPointIndex].m_nomral_vertex.position[2] = static_cast<float>(transformed_control_points.Buffer()[2]);
                 
                 //Normal
                 for (auto l = 0; l < pMesh->GetElementNormalCount(); ++l)
@@ -269,18 +269,18 @@ namespace assetlib
                         switch (leNormal->GetReferenceMode())
                         {
                         case FbxGeometryElement::eDirect:
-                            l_mesh_vertices[vertexId * FLOAT_COUNT_PER_VERTEX + 3] = static_cast<float>(leNormal->GetDirectArray().GetAt(vertexId).Buffer()[0]);
-                            l_mesh_vertices[vertexId * FLOAT_COUNT_PER_VERTEX + 4] = static_cast<float>(leNormal->GetDirectArray().GetAt(vertexId).Buffer()[1]);
-                            l_mesh_vertices[vertexId * FLOAT_COUNT_PER_VERTEX + 5] = static_cast<float>(leNormal->GetDirectArray().GetAt(vertexId).Buffer()[2]);
-                            l_mesh_vertices[vertexId * FLOAT_COUNT_PER_VERTEX + 6] = 1.0f;
+                            l_mesh_vertices[vertexId].m_nomral_vertex.normal[0] = static_cast<float>(leNormal->GetDirectArray().GetAt(vertexId).Buffer()[0]);
+                            l_mesh_vertices[vertexId].m_nomral_vertex.normal[1] = static_cast<float>(leNormal->GetDirectArray().GetAt(vertexId).Buffer()[1]);
+                            l_mesh_vertices[vertexId].m_nomral_vertex.normal[2] = static_cast<float>(leNormal->GetDirectArray().GetAt(vertexId).Buffer()[2]);
+                            l_mesh_vertices[vertexId].m_nomral_vertex.normal[3] = 1.0f;
                             break;
                         case FbxGeometryElement::eIndexToDirect:
                         {
                             int id = leNormal->GetIndexArray().GetAt(vertexId);
-                            l_mesh_vertices[vertexId * FLOAT_COUNT_PER_VERTEX + 3] = static_cast<float>(leNormal->GetDirectArray().GetAt(id).Buffer()[0]);
-                            l_mesh_vertices[vertexId * FLOAT_COUNT_PER_VERTEX + 4] = static_cast<float>(leNormal->GetDirectArray().GetAt(id).Buffer()[1]);
-                            l_mesh_vertices[vertexId * FLOAT_COUNT_PER_VERTEX + 5] = static_cast<float>(leNormal->GetDirectArray().GetAt(id).Buffer()[2]);
-                            l_mesh_vertices[vertexId * FLOAT_COUNT_PER_VERTEX + 6] = 1.0f;
+                            l_mesh_vertices[vertexId].m_nomral_vertex.normal[0] = static_cast<float>(leNormal->GetDirectArray().GetAt(id).Buffer()[0]);
+                            l_mesh_vertices[vertexId].m_nomral_vertex.normal[1] = static_cast<float>(leNormal->GetDirectArray().GetAt(id).Buffer()[1]);
+                            l_mesh_vertices[vertexId].m_nomral_vertex.normal[2] = static_cast<float>(leNormal->GetDirectArray().GetAt(id).Buffer()[2]);
+                            l_mesh_vertices[vertexId].m_nomral_vertex.normal[3] = 1.0f;
                         }
                         break;
                         default:
@@ -291,10 +291,10 @@ namespace assetlib
                     {
                         if (leNormal->GetReferenceMode() == FbxGeometryElement::eDirect)
                         {
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 3] = static_cast<float>(leNormal->GetDirectArray().GetAt(lControlPointIndex).Buffer()[0]);
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 4] = static_cast<float>(leNormal->GetDirectArray().GetAt(lControlPointIndex).Buffer()[1]);
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 5] = static_cast<float>(leNormal->GetDirectArray().GetAt(lControlPointIndex).Buffer()[2]);
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 6] = 1.0f;
+                            l_mesh_vertices[lControlPointIndex].m_nomral_vertex.normal[0] = static_cast<float>(leNormal->GetDirectArray().GetAt(lControlPointIndex).Buffer()[0]);
+                            l_mesh_vertices[lControlPointIndex].m_nomral_vertex.normal[1] = static_cast<float>(leNormal->GetDirectArray().GetAt(lControlPointIndex).Buffer()[1]);
+                            l_mesh_vertices[lControlPointIndex].m_nomral_vertex.normal[2] = static_cast<float>(leNormal->GetDirectArray().GetAt(lControlPointIndex).Buffer()[2]);
+                            l_mesh_vertices[lControlPointIndex].m_nomral_vertex.normal[3] = 1.0f;
                         }
                     }
                 
@@ -313,14 +313,14 @@ namespace assetlib
                         switch (leUV->GetReferenceMode())
                         {
                         case FbxGeometryElement::eDirect:
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 7] = static_cast<float>(leUV->GetDirectArray().GetAt(lControlPointIndex).Buffer()[0]);
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 8] = static_cast<float>(leUV->GetDirectArray().GetAt(lControlPointIndex).Buffer()[1]);
+                            l_mesh_vertices[lControlPointIndex].m_nomral_vertex.texture_coord[0] = static_cast<float>(leUV->GetDirectArray().GetAt(lControlPointIndex).Buffer()[0]);
+                            l_mesh_vertices[lControlPointIndex].m_nomral_vertex.texture_coord[1] = static_cast<float>(leUV->GetDirectArray().GetAt(lControlPointIndex).Buffer()[1]);
                             break;
                         case FbxGeometryElement::eIndexToDirect:
                         {
                             int id = leUV->GetIndexArray().GetAt(lControlPointIndex);
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 7] = static_cast<float>(leUV->GetDirectArray().GetAt(id).Buffer()[0]);
-                            l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 8] = static_cast<float>(leUV->GetDirectArray().GetAt(id).Buffer()[1]);
+                            l_mesh_vertices[lControlPointIndex].m_nomral_vertex.texture_coord[0] = static_cast<float>(leUV->GetDirectArray().GetAt(id).Buffer()[0]);
+                            l_mesh_vertices[lControlPointIndex].m_nomral_vertex.texture_coord[1] = static_cast<float>(leUV->GetDirectArray().GetAt(id).Buffer()[1]);
 
                         }
                         break;
@@ -346,8 +346,8 @@ namespace assetlib
                                 //the UV index depends on the reference mode
                                 //int lUVIndex = leUV->GetIndexArray().GetAt(vertexId);
                                 lUVValue = leUV->GetDirectArray().GetAt(lTextureUVIndex);
-                                l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 7] = static_cast<float>(lUVValue.Buffer()[0]);
-                                l_mesh_vertices[lControlPointIndex * FLOAT_COUNT_PER_VERTEX + 8] = static_cast<float>(lUVValue.Buffer()[1]);
+                                l_mesh_vertices[lControlPointIndex].m_nomral_vertex.texture_coord[0] = static_cast<float>(lUVValue.Buffer()[0]);
+                                l_mesh_vertices[lControlPointIndex].m_nomral_vertex.texture_coord[1] = static_cast<float>(lUVValue.Buffer()[1]);
                                 vertexId++;
 
                             }
@@ -370,6 +370,7 @@ namespace assetlib
                 p_game_mesh->AddIndex(lControlPointIndex);
             } // for polygonSize
         } // for polygonCount
+        p_game_mesh->AddVertices(l_mesh_vertices);
         //p_game_mesh->m_index_count = p_game_mesh->m_indices.size();
         //assetlib::AssetManager::GetAssertManager().m_index_id_offset += p_game_mesh->m_indices.size();
         //assetlib::AssetManager::GetAssertManager().m_vertex_id_offset += lControlPointsCount;

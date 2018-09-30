@@ -307,7 +307,6 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         SetVertexAndIndexBuffer(current_render_cmd);
         //Render Scene
         RenderScene(current_render_cmd);
-        // Indicate that the back buffer will now be used to present.
 
         //Render UI(Scene Related Debug Content)
 
@@ -316,7 +315,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         current_render_cmd->SetPipelineState(m_ui_pipelineState.Get());
         current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexCount()), 1, static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexOffsetInBuffer()), static_cast<int32_t>(dummy_depth_debug->m_meshes[0]->GetVertexOffsetInBuffer()), 0);
 
-
+        // Indicate that the back buffer will now be used to present.
         current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
         DX12TransferManager::GetTransferManager().TransitionResource(*m_shadow_map, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 

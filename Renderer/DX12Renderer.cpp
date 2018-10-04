@@ -122,7 +122,8 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         ComPtr<ID3DBlob> shadow_map_vs;
         ComPtr<ID3DBlob> ui_vs;
         ComPtr<ID3DBlob> ui_ps;
-
+        ComPtr<ID3DBlob> ui_ps_debug;
+        ComPtr<ID3DBlob> ui_vs_debug;
 
 #if defined(_DEBUG)
         // Enable better shader debugging with the graphics debugging tools.
@@ -136,6 +137,8 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"shadow_map_pass_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &shadow_map_vs, nullptr));
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_vs.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &ui_vs, nullptr));
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compileFlags, 0, &ui_ps, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_vs_debug.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &ui_vs_debug, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_ps_debug.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compileFlags, 0, &ui_ps_debug, nullptr));
 
         // Define the vertex input layout.
         std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs =
@@ -176,6 +179,14 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         }
 
 
+        //UI Debug pass (Line)
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC ui_debug_pass_pso_desc = psoDesc;
+        {
+            ui_debug_pass_pso_desc.VS = CD3DX12_SHADER_BYTECODE(ui_vs_debug.Get());
+            ui_debug_pass_pso_desc.PS = CD3DX12_SHADER_BYTECODE(ui_ps_debug.Get());
+            ui_debug_pass_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+            ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&ui_debug_pass_pso_desc, IID_PPV_ARGS(&m_ui_debug_pipelineState)));
+        }
 
 
         //Shadow Map Pass
@@ -309,9 +320,13 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         RenderScene(current_render_cmd);
 
         //Render UI(Scene Related Debug Content)
+        current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
+        current_render_cmd->SetPipelineState(m_ui_debug_pipelineState.Get());
+        current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_debug_ui->m_meshes[0]->GetIndexCount()), 1, static_cast<uint32_t>(dummy_debug_ui->m_meshes[0]->GetIndexOffsetInBuffer()), static_cast<int32_t>(dummy_debug_ui->m_meshes[0]->GetVertexOffsetInBuffer()), 0);
 
 
         //Render UI(Framebuffer Viewer)
+        current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         current_render_cmd->SetPipelineState(m_ui_pipelineState.Get());
         current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexCount()), 1, static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexOffsetInBuffer()), static_cast<int32_t>(dummy_depth_debug->m_meshes[0]->GetVertexOffsetInBuffer()), 0);
 
@@ -534,9 +549,18 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
 
     //Init UI
     dummy_depth_debug = std::unique_ptr<gameplay::GameUIActor>(new gameplay::GameUIActor("Dummy UI"));
-    auto l_ui_mesh = new gameplay::GameMesh("dummy_ui_mesh",Math::Rect(Math::Vector3(0.7,1.0,0.0),0.3));
+    auto l_ui_mesh = new gameplay::GameMesh("dummy_ui_mesh",Math::Rect(Math::Vector3(0.7f,1.0f,0.0f),0.3f));
     assetlib::AssetManager::GetAssertManager().LoadMesh(l_ui_mesh);
     dummy_depth_debug->AddMesh(l_ui_mesh);
+
+
+    //Init Debug UI
+    dummy_debug_ui = std::unique_ptr<gameplay::GameUIActor>(new gameplay::GameUIActor("Dummy Debug UI"));
+    auto l_debug_ui_mesh = new gameplay::GameMesh("dummy_debug_ui_mesh", Math::Grid(15.0f, 30, {1.0f,0.0f,0.0f}));
+    assetlib::AssetManager::GetAssertManager().LoadMesh(l_debug_ui_mesh);
+    dummy_debug_ui->AddMesh(l_debug_ui_mesh);
+
+
 }
 
 

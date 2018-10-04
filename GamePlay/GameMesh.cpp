@@ -27,7 +27,13 @@ namespace gameplay
         AddIndices({0,1,2,0,2,3});
     }
 
+    GameMesh::GameMesh(const std::string p_name, const Math::Primitive & p_primitive)
+        :m_name(p_name)
+    {
+        AddVertices(p_primitive.GetVertices());
+        AddIndices(p_primitive.GetIndices());
 
+    }
 
    
     void GameMesh::ReleaseMeshData()

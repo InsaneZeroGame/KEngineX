@@ -50,6 +50,9 @@ namespace Renderer {
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_shadow_map_pipelineState;
 
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_ui_pipelineState;
+
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> m_ui_debug_pipelineState;
+
         
         CD3DX12_VIEWPORT m_viewport;
 
@@ -70,6 +73,8 @@ namespace Renderer {
         std::vector<std::unique_ptr<DX12Texture>> m_dummy_actor_textures;
 
         std::unique_ptr<gameplay::GameUIActor> dummy_depth_debug;
+
+        std::unique_ptr<gameplay::GameUIActor> dummy_debug_ui;
 
 
         enum {

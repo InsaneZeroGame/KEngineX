@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <cassert>
 #include <Math/Rect.h>
+#include <Math/Grid.h>
 
 namespace gameplay
 {
@@ -16,6 +17,8 @@ namespace gameplay
 
         GameMesh(const std::string p_name, const Math::Rect& p_rect, const std::array<float, 3>& p_color =KEngineConstants::MESH_DEFAULT_COLOR);
         
+        GameMesh(const std::string p_name, const Math::Primitive& p_primitive);
+
         ~GameMesh();
 
         //It's called once data has been uploaded to GPU'S vram.

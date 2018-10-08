@@ -55,6 +55,11 @@ namespace Renderer
             return m_desc_heaps[p_type];
         }
 
+        __forceinline Microsoft::WRL::ComPtr<IDXGISwapChain3> GetSwapChain()
+        {
+            return m_swapChain;
+        }
+
         enum { DESCRIPTOR_HANDLE_MAX_NUM = 50 };
 
 
@@ -78,6 +83,8 @@ namespace Renderer
         Microsoft::WRL::ComPtr<ID3D12Device> m_device;
 
         Microsoft::WRL::ComPtr<ID3D12CommandQueue> m_commandQueue;
+        
+        Microsoft::WRL::ComPtr<IDXGISwapChain3> m_swapChain;
 
         void AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE);
 

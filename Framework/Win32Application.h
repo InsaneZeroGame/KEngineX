@@ -16,22 +16,21 @@
 #endif
 
 #include <windows.h>
-#include <DX12Renderer.h>
 #include <string>
 #include <wrl.h>
 #include <shellapi.h>
-
+#include "IRenderer.h"
 
 class Win32Application
 {
 public:
 	static int Run(HINSTANCE hInstance, int nCmdShow);
-	static HWND GetHwnd() { return m_hwnd; }
+	static HWND GetHwnd() { return g_hwnd; }
 
 protected:
 	static LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 private:
-	static HWND m_hwnd;
+	static HWND g_hwnd;
     static Renderer::IRenderer* m_dx12_renderer;
 };

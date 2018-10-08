@@ -25,7 +25,6 @@ namespace Renderer {
 
         DX12GpuDevice* m_device;
 
-        Microsoft::WRL::ComPtr<IDXGISwapChain3> m_swapChain;
 
         HANDLE m_fenceEvent;
 
@@ -33,9 +32,11 @@ namespace Renderer {
 
         uint64_t m_fence_value[DX12RendererConstants::SWAP_CHAIN_COUNT];
 
-        Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
+        DescriptorHandle m_render_target_handle[DX12RendererConstants::SWAP_CHAIN_COUNT];
 
-        uint32_t m_rtvDescriptorSize;
+        //Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
+
+        //uint32_t m_rtvDescriptorSize;
 
         Microsoft::WRL::ComPtr<ID3D12Resource> m_renderTargets[DX12RendererConstants::SWAP_CHAIN_COUNT];
 

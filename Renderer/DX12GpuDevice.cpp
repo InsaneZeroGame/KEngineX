@@ -1,5 +1,8 @@
 #include "DX12GpuDevice.h"
 #include "DXSampleHelper.h"
+#include <EngineConfig.h>
+#include <Win32Application.h>
+
 Renderer::DX12GpuDevice::DX12GpuDevice():
     m_useWarpDevice(false),
     m_desc_heaps_handle_count({})
@@ -49,17 +52,55 @@ Renderer::DX12GpuDevice::DX12GpuDevice():
         ));
     }
 
-    // Describe and create the command queue.
-    D3D12_COMMAND_QUEUE_DESC queueDesc = {};
-    queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+    //Init CommandQueue.
+    {
 
-    ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
+        // Describe and create the command queue.
+        D3D12_COMMAND_QUEUE_DESC queueDesc = {};
+        queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+        queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
+        ThrowIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
+    }
+
+    //Init SwapChain.
+    {
+        // Describe and create the swap chain.
+        DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+        swapChainDesc.BufferCount = DX12RendererConstants::SWAP_CHAIN_COUNT;
+        swapChainDesc.Width = KEngineConstants::WINDOW_WIDTH;
+        swapChainDesc.Height = KEngineConstants::WINDOW_HEIGHT;
+        swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+        swapChainDesc.SampleDesc.Count = 1;
+
+        ComPtr<IDXGIFactory4> factory;
+        ThrowIfFailed(CreateDXGIFactory2(0, IID_PPV_ARGS(&factory)));
+
+        ComPtr<IDXGISwapChain1> swapChain;
+        ThrowIfFailed(factory->CreateSwapChainForHwnd(
+            m_commandQueue.Get(),		// Swap chain needs the queue so that it can force a flush on it.
+            Win32Application::GetHwnd(),
+            &swapChainDesc,
+            nullptr,
+            nullptr,
+            &swapChain
+        ));
+
+        // This sample does not support fullscreen transitions.
+        ThrowIfFailed(factory->MakeWindowAssociation(Win32Application::GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
+
+        ThrowIfFailed(swapChain.As(&m_swapChain));
+    }
 
     //Allocate Descriptor Heaps
-    AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-    AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+    {
+        AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+        AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        AllocateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    }
+   
 
     m_device->CreateFence(0, D3D12_FENCE_FLAGS::D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_cmd_flush_fence));
 }

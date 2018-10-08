@@ -14,48 +14,11 @@
 #include "GameInput.h"
 #include <GameDirector.h>
 #include <fbxsdk.h>
+#include <DX12Renderer.h>
 
 
-HWND Win32Application::m_hwnd = nullptr;
+HWND Win32Application::g_hwnd = nullptr;
 Renderer::IRenderer* Win32Application::m_dx12_renderer = nullptr;
-
-
-
-
-static std::shared_ptr<gameplay::GamesScene> PrepareADummyScene() 
-{
-    assert(0);
-    //std::vector<float> triangleVertices =
-    //{
-    //   0.0f, 0.25f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
-    //   0.25f, -0.25f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
-    //   -0.25f, -0.25f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
-    //};
-    //
-    //using namespace gameplay;
-    //auto dummy_scene = std::make_shared<gameplay::GamesScene>();
-    //auto dummy_material = std::make_shared<GameMeterial>();
-    //GameMesh dummy_mesh1({
-    //    0.0f, 1.0f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
-    //    1.0f, -1.0f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
-    //    -1.0f, -1.0f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
-    //    }, { 0,1,2 });
-    //GameMesh dummy_mesh2({
-    //    0.25f + 0.0f, 0.25f, 0.0f    , 1.0f, 0.0f, 0.0f, 1.0f ,
-    //    0.25f + 0.25f, -0.25f, 0.0f  , 0.0f, 1.0f, 0.0f, 1.0f ,
-    //    0.25f + -0.25f, -0.25f, 0.0f , 0.0f, 0.0f, 1.0f, 1.0f ,
-    //    }, { 0,1,2 });
-    //
-    //
-    //dummy_material->m_meshes.push_back(dummy_mesh1);
-    //dummy_material->m_meshes.push_back(dummy_mesh2);
-    //
-    //dummy_scene->dummy_actor->AddMaterial(dummy_material);
-    //dummy_material.reset();
-    //return dummy_scene;
-}
-
-
 
 
 int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
@@ -74,7 +37,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 	//AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
 
 	// Create the window and store a handle to it.
-	m_hwnd = CreateWindow(
+	g_hwnd = CreateWindow(
 		windowClass.lpszClassName,
 		"KEngine",
 		WS_OVERLAPPEDWINDOW,
@@ -89,12 +52,12 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 
 	// Initialize the sample. OnInit is defined in each child-implementation of DXSample.
 
-	ShowWindow(m_hwnd, nCmdShow);
-    GameInput::Initialize(m_hwnd);
+	ShowWindow(g_hwnd, nCmdShow);
+    GameInput::Initialize(g_hwnd);
 
     //Init Renderer
     m_dx12_renderer = new Renderer::DX12Renderer();
-    m_dx12_renderer->SetWindow(m_hwnd, KEngineConstants::WINDOW_X,KEngineConstants::WINDOW_Y, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
+    m_dx12_renderer->SetWindow(g_hwnd, KEngineConstants::WINDOW_X,KEngineConstants::WINDOW_Y, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
     auto& game_director = gameplay::GameDirector::GetGameDirector();
     m_dx12_renderer->Init();
 

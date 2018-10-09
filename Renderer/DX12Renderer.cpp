@@ -12,41 +12,20 @@ Renderer::DX12Renderer::DX12Renderer():
     m_scissorRect(0, 0, static_cast<LONG>(m_window_width), static_cast<LONG>(m_window_height)),
     m_fence_value(),
     m_render_cmd(),
-    m_device(DX12GpuDevice::GetGpuDevicePtr())
-{
-}
-
-Renderer::DX12Renderer::~DX12Renderer()
+    m_device(DX12GpuDevice::GetGpuDevicePtr()),
+    m_current_frameindex(m_device->GetSwapChain()->GetCurrentBackBufferIndex()),
+    m_render_context(new DX12RenderContext)
 {
 }
 
 void Renderer::DX12Renderer::Init()
 {
-    InitSwapChain();
     InitDepthBuffer();
     InitFences();
     InitCameraUniform();
     InitRootSignature();
     InitGraphicsPipelines();
     InitCmdBuffers();
-}
-
-void Renderer::DX12Renderer::InitSwapChain()
-{
-    
-    m_current_frameindex = m_device->GetSwapChain()->GetCurrentBackBufferIndex();
-    
-    // Create frame resources.
-    {
-        // Create a RTV for each frame.
-        for (UINT n = 0; n < DX12RendererConstants::SWAP_CHAIN_COUNT; n++)
-        {
-            m_render_target_handle[n] = m_device->GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-            ThrowIfFailed(m_device->GetSwapChain()->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
-            m_device->GetDX12Device()->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, m_render_target_handle[n].cpu_handle);
-        }
-    }
-
 }
 
 void Renderer::DX12Renderer::InitFences()
@@ -254,24 +233,16 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         memcpy(m_main_camera_uniform->data + CAMERA_UNIFORM_SIZE * m_current_frameindex, mvp, sizeof(Math::Matrix4) * 3);
 
         current_render_cmd->SetGraphicsRootConstantBufferView(1, m_main_camera_uniform->GetGpuVirtualAddress()+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
-        //To Get a gpu handle from a cpu one.
-
+        
         ID3D12DescriptorHeap* l_heaps[] = { m_device->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).Get() };
 
         current_render_cmd->SetDescriptorHeaps(1, l_heaps);
-        current_render_cmd->SetGraphicsRootDescriptorTable(3, m_shadow_map->GetDepthSRV().gpu_handle);
         current_render_cmd->RSSetViewports(1, &m_viewport);
         current_render_cmd->RSSetScissorRects(1, &m_scissorRect);
 
-        // Indicate that the back buffer will be used as a render target.
-        current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+        m_render_context->PrepareToRender(current_render_cmd, m_current_frameindex);
 
-        // Record commands.
-        const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-        current_render_cmd->ClearRenderTargetView(m_render_target_handle[m_current_frameindex].cpu_handle, clearColor, 0, nullptr);
-        current_render_cmd->ClearDepthStencilView(m_depth_buffer->GetDSV().cpu_handle, D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
         current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        current_render_cmd->OMSetRenderTargets(1, &m_render_target_handle[m_current_frameindex].cpu_handle, FALSE, &m_depth_buffer->GetDSV().cpu_handle);
         //Set Vertex and Index Buffer.
         SetVertexAndIndexBuffer(current_render_cmd);
         //Render Scene
@@ -289,7 +260,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexCount()), 1, static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexOffsetInBuffer()), static_cast<int32_t>(dummy_depth_debug->m_meshes[0]->GetVertexOffsetInBuffer()), 0);
 
         // Indicate that the back buffer will now be used to present.
-        current_render_cmd->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(m_renderTargets[m_current_frameindex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+        m_render_context->PrepareToPresent(current_render_cmd, m_current_frameindex);
         DX12TransferManager::GetTransferManager().TransitionResource(*m_shadow_map, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 
         ThrowIfFailed(current_render_cmd->Close());
@@ -328,10 +299,6 @@ void Renderer::DX12Renderer::InitDepthBuffer()
     DX12TransferManager::GetTransferManager().TransitionResource(*m_shadow_map, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 
 
-    //ToDo:May gain performance using DENY_SHADER_ACCESS.
-    m_depth_buffer = std::unique_ptr<DX12DepthBuffer>(new DX12DepthBuffer());
-    m_depth_buffer->Create(L"DepthBuffer", m_window_width, m_window_height, DEPTH_BUFFER_FORMAT);
-    DX12TransferManager::GetTransferManager().TransitionResource(*m_depth_buffer, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 }
 
 void Renderer::DX12Renderer::InitRootSignature()
@@ -375,7 +342,9 @@ void Renderer::DX12Renderer::InitRootSignature()
 
         shadow_map_desc_range.BaseShaderRegister = 0;
         shadow_map_desc_range.NumDescriptors = 1;
-        shadow_map_desc_range.OffsetInDescriptorsFromTableStart = 0;
+        //Todo : Depth Buffer's SRV is the base desc handle in srv heap,shadow map is the second.Figure out a smart way to deal this.
+        //Otherwise resources must be initialized in a fixed order.
+        shadow_map_desc_range.OffsetInDescriptorsFromTableStart = 1;
         shadow_map_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         shadow_map_desc_range.RegisterSpace = 0;
 
@@ -461,7 +430,7 @@ void Renderer::DX12Renderer::SetVertexAndIndexBuffer(ID3D12GraphicsCommandList *
     p_cmd->IASetIndexBuffer(&DX12TransferManager::GetTransferManager().GetIndexBufferView());
 }
 
-void Renderer::DX12Renderer::SetWindow(HWND hWnd, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
+void Renderer::DX12Renderer::SetTargetWindow(HWND hWnd, uint32_t x, uint32_t y, uint32_t width, uint32_t height)
 {
     m_hwnd = hWnd;
     m_window_height = height;
@@ -540,4 +509,10 @@ void Renderer::DX12Renderer::Update()
 void Renderer::DX12Renderer::Destory()
 {
     m_scene.reset();
+}
+
+
+Renderer::DX12Renderer::~DX12Renderer()
+{
+
 }

@@ -3,16 +3,15 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers.
 #endif
-#include "DX12DepthBuffer.h"
 #include <windows.h>
 #include <array>
-#include "DX12GpuDevice.h"
 #include "DX12ComandBuffer.h"
 #include "DX12TransferManager.h"
 #include <GameCamera.h>
 #include <unordered_map>
 #include "DX12Texture.h"
 #include "GameUIActor.h"
+#include "DX12RenderContext.h"
 
 namespace Renderer {
     class DX12Renderer final: public IRenderer
@@ -23,23 +22,16 @@ namespace Renderer {
         ~DX12Renderer();
     private:
 
-        DX12GpuDevice* m_device;
+        std::unique_ptr<DX12RenderContext> m_render_context;
 
+        DX12GpuDevice* m_device;
 
         HANDLE m_fenceEvent;
 
         uint8_t m_current_frameindex;
 
         uint64_t m_fence_value[DX12RendererConstants::SWAP_CHAIN_COUNT];
-
-        DescriptorHandle m_render_target_handle[DX12RendererConstants::SWAP_CHAIN_COUNT];
-
-        //Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> m_rtvHeap;
-
-        //uint32_t m_rtvDescriptorSize;
-
-        Microsoft::WRL::ComPtr<ID3D12Resource> m_renderTargets[DX12RendererConstants::SWAP_CHAIN_COUNT];
-
+        
         std::array<std::unique_ptr<DX12RenderCommndBuffer>, DX12RendererConstants::SWAP_CHAIN_COUNT> m_render_cmd;
 
         std::array<ID3D12Fence*, DX12RendererConstants::SWAP_CHAIN_COUNT> m_fences;
@@ -63,7 +55,6 @@ namespace Renderer {
 
         std::unique_ptr<UniformBuffer> m_main_camera_uniform;
 
-        std::unique_ptr<DX12DepthBuffer> m_depth_buffer;
 
         std::unique_ptr<DX12DepthBuffer> m_shadow_map;
 
@@ -88,13 +79,9 @@ namespace Renderer {
             DEPTH_BUFFER_HEIGHT = 1080
         };
 
-        const DXGI_FORMAT DEPTH_BUFFER_FORMAT = DXGI_FORMAT::DXGI_FORMAT_D16_UNORM;
-
         const Math::Matrix4 SHADOW_PREFIX = Math::Matrix4(Math::AffineTransform(Math::Matrix3::MakeScale(0.5f, -0.5f, 1.0f), Math::Vector3(0.5f, 0.5f, 0.0f)));
 
     private:
-
-        void InitSwapChain();
 
         void InitFences();
 
@@ -124,7 +111,7 @@ namespace Renderer {
 
         virtual void Destory() override;
 
-        virtual void SetWindow(HWND hWnd,uint32_t x,uint32_t y, uint32_t width, uint32_t height) override;
+        virtual void SetTargetWindow(HWND hWnd,uint32_t x,uint32_t y, uint32_t width, uint32_t height) override;
 
         __forceinline virtual void SetCurrentScene(std::shared_ptr<gameplay::GamesScene>) override;
 

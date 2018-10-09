@@ -57,7 +57,7 @@ int Win32Application::Run(HINSTANCE hInstance, int nCmdShow)
 
     //Init Renderer
     m_dx12_renderer = new Renderer::DX12Renderer();
-    m_dx12_renderer->SetWindow(g_hwnd, KEngineConstants::WINDOW_X,KEngineConstants::WINDOW_Y, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
+    m_dx12_renderer->SetTargetWindow(g_hwnd, KEngineConstants::WINDOW_X,KEngineConstants::WINDOW_Y, KEngineConstants::WINDOW_WIDTH, KEngineConstants::WINDOW_HEIGHT);
     auto& game_director = gameplay::GameDirector::GetGameDirector();
     m_dx12_renderer->Init();
 

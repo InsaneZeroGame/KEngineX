@@ -34,9 +34,9 @@ namespace Renderer
             return m_color_attachments[p_index];
         }
 
-        void AddColorAttachment(const std::wstring& Name, uint32_t Width, uint32_t Height, 
+        Renderer::DX12ColorBuffer* AddColorAttachment(const std::wstring& Name, uint32_t Width, uint32_t Height,
             DXGI_FORMAT Format, uint32_t NumMips = 1, D3D12_GPU_VIRTUAL_ADDRESS VidMem = 0);
-        void AddColorAttachment(const ColorAttachmentDescriptor& p_desc);
+        Renderer::DX12ColorBuffer* AddColorAttachment(const ColorAttachmentDescriptor& p_desc);
     private:
         std::vector<DX12ColorBuffer*> m_color_attachments;
 

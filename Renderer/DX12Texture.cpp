@@ -70,7 +70,7 @@ namespace Renderer
         DX12TransferManager::GetTransferManager().AddTransferJob(&l_job,true);
 
         if (m_handle.cpu_handle.ptr == 0)
-            m_handle = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,&m_descriptor_heap_index);
+            m_handle = DX12GpuDevice::GetGpuDevice().GetDescriptorHandle(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         DX12GpuDevice::GetGpuDevicePtr()->GetDX12Device()->CreateShaderResourceView(m_pResource.Get(), nullptr, m_handle.cpu_handle);
     }
 

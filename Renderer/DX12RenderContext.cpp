@@ -1,5 +1,6 @@
 #include "DX12RenderContext.h"
 #include "EngineConfig.h"
+#include "DX12TransferManager.h"
 
 Renderer::DX12RenderContext::DX12RenderContext()
     :m_device(DX12GpuDevice::GetGpuDevicePtr())
@@ -47,17 +48,18 @@ void Renderer::DX12RenderContext::PrePresent(ID3D12GraphicsCommandList * p_cmd_l
 
 }
 
-void Renderer::DX12RenderContext::AddColorAttachment(const std::wstring& Name, uint32_t Width, uint32_t Height, 
+Renderer::DX12ColorBuffer* Renderer::DX12RenderContext::AddColorAttachment(const std::wstring& Name, uint32_t Width, uint32_t Height, 
     DXGI_FORMAT Format, uint32_t NumMips, D3D12_GPU_VIRTUAL_ADDRESS VidMem)
 {
     auto l_new_attachemnt = new DX12ColorBuffer();
     m_color_attachments.push_back(l_new_attachemnt);
     l_new_attachemnt->Create(Name, Width, Height, NumMips, Format);
+    return l_new_attachemnt;
 }
 
-void Renderer::DX12RenderContext::AddColorAttachment(const ColorAttachmentDescriptor & p_desc)
+Renderer::DX12ColorBuffer* Renderer::DX12RenderContext::AddColorAttachment(const ColorAttachmentDescriptor & p_desc)
 {
-    AddColorAttachment(p_desc.Name,p_desc.Width,p_desc.Height,p_desc.Format,p_desc.NumMips,p_desc.VidMem);
+    return AddColorAttachment(p_desc.Name,p_desc.Width,p_desc.Height,p_desc.Format,p_desc.NumMips,p_desc.VidMem);
 }
 
 
@@ -94,7 +96,7 @@ void Renderer::DX12RenderContext::InitColorBuffers()
     //Init color attachments based on config in render config
     for (const auto& l_attachment_desc : COLOR_ATTACHMENT_CONFIG)
     {
-        AddColorAttachment(l_attachment_desc);
+        DX12TransferManager::GetTransferManager().TransitionResource(*AddColorAttachment(l_attachment_desc), D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET, true);
     }
 }
 

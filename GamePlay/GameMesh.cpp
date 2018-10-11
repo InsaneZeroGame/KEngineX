@@ -8,13 +8,15 @@ namespace gameplay
     GameMesh::GameMesh(const std::string p_name)
        :m_vertices({}),
         m_name(p_name),
-        m_indices({})
+        m_indices({}),
+        KFramework::IGPUStatic(p_name)
     {
         
     }
 
     GameMesh::GameMesh(const std::string p_name,const Math::Rect& p_rect, const std::array<float, 3>& p_color)
-        :m_name(p_name)
+        :m_name(p_name),
+        KFramework::IGPUStatic(p_name)
     {
         //Top Left
         auto tl = Renderer::Vertex({ p_rect.m_pos[0].GetX(),p_rect.m_pos[0].GetY(),p_rect.m_pos[0].GetZ(),p_color[0],p_color[1],p_color[2],1.0f,0.0f,0.0f });
@@ -28,15 +30,24 @@ namespace gameplay
     }
 
     GameMesh::GameMesh(const std::string p_name, const Math::Primitive & p_primitive)
-        :m_name(p_name)
+        :m_name(p_name),
+        KFramework::IGPUStatic(p_name)
     {
         AddVertices(p_primitive.GetVertices());
         AddIndices(p_primitive.GetIndices());
 
     }
 
+    GameMesh::GameMesh(const std::string p_name, Math::Primitive && p_primitive)
+        :m_name(p_name),
+        KFramework::IGPUStatic(p_name)
+    {
+        AddVertices(p_primitive.GetVertices());
+        AddIndices(p_primitive.GetIndices());
+    }
+
    
-    void GameMesh::ReleaseMeshData()
+    void GameMesh::ReleaseData()
     {
 
         assert(m_vertices.size() > 0);
@@ -49,7 +60,7 @@ namespace gameplay
         std::vector<uint32_t> l_release_indices;
         l_release_indices.clear();
         m_indices.swap(l_release_indices);
-        m_is_data_released = true;
+        m_released = true;
 
     }
     void GameMesh::AddVertices(const std::vector<Renderer::Vertex>& p_vertices)

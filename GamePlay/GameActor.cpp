@@ -27,7 +27,7 @@ void gameplay::GameActor::GenerateBoundingBox()
 
     for (auto mesh : m_meshes)
     {
-        assert(!mesh->IsMeshDataReleased());
+        assert(!mesh->IsReleased());
         const auto& l_mesh_vertices = mesh->GetVertices();
         for (const auto& vertex : l_mesh_vertices)
         {
@@ -49,7 +49,9 @@ void gameplay::GameActor::GenerateBoundingBox()
     }
 
 
-    m_bounding_box = std::unique_ptr<Math::BoundingBox>(new Math::BoundingBox(l_max,l_min));
+    m_bounding_box_mesh = std::shared_ptr<GameMesh>(new GameMesh("BoundingBox", Math::BoundingBox(l_max, l_min)));
 }
+
+
 
 

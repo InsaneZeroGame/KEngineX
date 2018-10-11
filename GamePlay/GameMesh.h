@@ -5,10 +5,11 @@
 #include <cassert>
 #include <Math/Rect.h>
 #include <Math/Grid.h>
+#include <IDataType.h>
 
 namespace gameplay
 {
-    struct GameMesh
+    struct GameMesh : public KFramework::IGPUStatic
     {
     public:
 
@@ -19,11 +20,13 @@ namespace gameplay
         
         GameMesh(const std::string p_name, const Math::Primitive& p_primitive);
 
+        GameMesh(const std::string p_name, Math::Primitive&& p_primitive);
+
         ~GameMesh();
 
         //It's called once data has been uploaded to GPU'S vram.
 
-        void ReleaseMeshData();
+        virtual void ReleaseData() override;
 
         void AddVertices(const std::vector<Renderer::Vertex>& p_vertices);
 
@@ -32,12 +35,6 @@ namespace gameplay
         void AddVertices(std::vector<Renderer::Vertex>&& p_vertices);
 
         void AddIndices(std::vector<uint32_t>&& p_indices);
-
-        __forceinline bool IsMeshDataReleased() const
-        {
-            return m_is_data_released;
-        };
-
 
         __forceinline std::vector<Renderer::Vertex>& GetVertices()
         {
@@ -128,6 +125,5 @@ namespace gameplay
 
         uint32_t m_texture_id = 0;
         
-        bool m_is_data_released = false;
     };//class GameMesh
 }//namespace gameplay

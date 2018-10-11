@@ -4,7 +4,7 @@
 #include <future>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-
+#include <IDataType.h>
 
 Renderer::DX12Renderer::DX12Renderer():
     IRenderer(),
@@ -63,6 +63,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         ComPtr<ID3DBlob> ui_ps;
         ComPtr<ID3DBlob> ui_ps_debug;
         ComPtr<ID3DBlob> ui_vs_debug;
+        ComPtr<ID3DBlob> color_pass_gbuffer_ps;
 
 #if defined(_DEBUG)
         // Enable better shader debugging with the graphics debugging tools.
@@ -78,6 +79,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compileFlags, 0, &ui_ps, nullptr));
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_vs_debug.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &ui_vs_debug, nullptr));
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_ps_debug.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compileFlags, 0, &ui_ps_debug, nullptr));
+        ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"color_pass_gbuffer_ps.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compileFlags, 0, &color_pass_gbuffer_ps, nullptr));
 
 
         // Describe and create the graphics pipeline state object (PSO).
@@ -104,6 +106,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         {
             //num of render targets = num of color attachment + swapchain;
             deferred_pass.NumRenderTargets = 1;
+            deferred_pass.PS = CD3DX12_SHADER_BYTECODE(color_pass_gbuffer_ps.Get());
             for (auto i = 0 ; i < COLOR_ATTACHMENT_CONFIG.size(); ++i)
             {
                 deferred_pass.NumRenderTargets++;
@@ -324,6 +327,13 @@ void Renderer::DX12Renderer::InitRootSignature()
 
 
         //DesciptorTable
+        //SRV Heap Layout
+        //  Depth Buffer SRV
+        //  ShadowMap SRV
+        //  RTV 0 : Swapchain
+        //  RTV 1 : Normal
+        //  Material Textures.
+        
         D3D12_ROOT_PARAMETER l_desc_table_parameter = {};
         l_desc_table_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
         l_desc_table_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
@@ -343,7 +353,11 @@ void Renderer::DX12Renderer::InitRootSignature()
         diffuse_desc_range.BaseShaderRegister = 1;
         //all srv except Shadow map and depth buffer
         diffuse_desc_range.NumDescriptors = DX12GpuDevice::DESCRIPTOR_HANDLE_MAX_NUM - 1;
-        diffuse_desc_range.OffsetInDescriptorsFromTableStart = 2;
+        //Todo : Depth Buffer's SRV is the base desc handle in srv heap,shadow map is the second.Figure out a smart way to deal this.
+        //Then it's color attachments(swapchain + other attachment).
+        //Then it's textures
+        const int l_swapchain_count = 1;
+        diffuse_desc_range.OffsetInDescriptorsFromTableStart = 2 + COLOR_ATTACHMENT_CONFIG.size() + l_swapchain_count;
         diffuse_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         diffuse_desc_range.RegisterSpace = 0;
 
@@ -443,6 +457,8 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
     }
     m_scene = p_scene;
 
+    //const int color_attachment_heap_offset = COLOR_ATTACHMENT_CONFIG.size();
+
     for (auto l_texture_id = 0  ; l_texture_id < m_scene->dummy_actor->m_texture_names.size() ; ++l_texture_id)
     {
         //Skip if default texture
@@ -477,6 +493,7 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
     assetlib::AssetManager::GetAssertManager().LoadMesh(l_debug_ui_mesh);
     dummy_debug_ui->AddMesh(l_debug_ui_mesh);
 
+    KFramework::IGPUStatic::ReleaseAllData();
 
 }
 

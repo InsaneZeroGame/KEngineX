@@ -18,3 +18,9 @@ struct UIPSInput
     float4 color : COLOR;
     float2 texture_coord : TexCoord0;
 };
+
+struct GBuffer
+{
+    float4 color;
+    float4 normal;
+};

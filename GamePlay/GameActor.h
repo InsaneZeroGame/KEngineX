@@ -22,7 +22,7 @@ namespace gameplay
 
         std::vector<std::string> m_texture_names;
 
-        std::unique_ptr<Math::BoundingBox> m_bounding_box;
+        std::shared_ptr<GameMesh> m_bounding_box_mesh;
 
         __forceinline void AddMesh(GameMesh* p_mesh)
         {

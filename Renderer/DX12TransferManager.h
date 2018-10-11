@@ -70,7 +70,7 @@ namespace Renderer
 
         void PrepareToRender();
 
-        void TransitionResource(DX12GpuResource& Resource, D3D12_RESOURCE_STATES NewState, bool FlushImmediate, D3D12_COMMAND_LIST_TYPE);
+        void TransitionResource(DX12GpuResource& Resource, D3D12_RESOURCE_STATES NewState, bool FlushImmediate, D3D12_COMMAND_LIST_TYPE = D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
 
         __forceinline D3D12_VERTEX_BUFFER_VIEW GetVertexBufferView()
         {

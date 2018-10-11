@@ -20,7 +20,6 @@ Renderer::DX12Renderer::DX12Renderer():
 
 void Renderer::DX12Renderer::Init()
 {
-    InitDepthBuffer();
     InitFences();
     InitCameraUniform();
     InitRootSignature();
@@ -35,6 +34,7 @@ void Renderer::DX12Renderer::InitFences()
     {
         m_device->GetDX12Device()->CreateFence(0, D3D12_FENCE_FLAG_NONE,IID_PPV_ARGS(&m_fences[i]));
     }
+    //gpu fence value init to 0,so we set cpu side value to 1.
     m_fence_value[0] = 1;
 
     // Create an event handle to use for frame synchronization.
@@ -54,7 +54,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
     
 
     // Create the pipeline state, which includes compiling and loading shaders.
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC l_base_pso_desc = {};
     {
         ComPtr<ID3DBlob> vertexShader;
         ComPtr<ID3DBlob> pixelShader;
@@ -79,37 +79,43 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_vs_debug.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "vs_5_1", compileFlags, 0, &ui_vs_debug, nullptr));
         ThrowIfFailed(D3DCompileFromFile(GetAssetFullPath(L"ui_ps_debug.hlsl").c_str(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "main", "ps_5_1", compileFlags, 0, &ui_ps_debug, nullptr));
 
-        // Define the vertex input layout.
-        std::vector<D3D12_INPUT_ELEMENT_DESC> inputElementDescs =
-        {
-            { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-            { "TEXTURECOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-
-        };
-
 
         // Describe and create the graphics pipeline state object (PSO).
-        psoDesc.InputLayout = { inputElementDescs.data(), static_cast<uint32_t>(inputElementDescs.size()) };
-        psoDesc.pRootSignature = m_rootSignature.Get();
-        psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
-        psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
-        psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-        psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-        psoDesc.DepthStencilState.DepthEnable = TRUE;
-        psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-        psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-        psoDesc.DepthStencilState.StencilEnable = FALSE;
-        psoDesc.SampleMask = UINT_MAX;
-        psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-        psoDesc.NumRenderTargets = 1;
-        psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-        psoDesc.DSVFormat = DEPTH_BUFFER_FORMAT;
-        psoDesc.SampleDesc.Count = 1;
-        ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_pipelineState)));
+        l_base_pso_desc.InputLayout = { inputElementDescs.data(), static_cast<uint32_t>(inputElementDescs.size()) };
+        l_base_pso_desc.pRootSignature = m_rootSignature.Get();
+        l_base_pso_desc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
+        l_base_pso_desc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
+        l_base_pso_desc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+        l_base_pso_desc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+        l_base_pso_desc.DepthStencilState.DepthEnable = TRUE;
+        l_base_pso_desc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+        l_base_pso_desc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+        l_base_pso_desc.DepthStencilState.StencilEnable = FALSE;
+        l_base_pso_desc.SampleMask = UINT_MAX;
+        l_base_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+        l_base_pso_desc.NumRenderTargets = 1;
+        l_base_pso_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+        l_base_pso_desc.DSVFormat = DEPTH_BUFFER_FORMAT;
+        l_base_pso_desc.SampleDesc.Count = 1;
+
+
+        //deferred Pass
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC deferred_pass = l_base_pso_desc;
+        {
+            //num of render targets = num of color attachment + swapchain;
+            deferred_pass.NumRenderTargets = 1;
+            for (auto i = 0 ; i < COLOR_ATTACHMENT_CONFIG.size(); ++i)
+            {
+                deferred_pass.NumRenderTargets++;
+                deferred_pass.RTVFormats[i + 1] = COLOR_ATTACHMENT_CONFIG[i].Format;
+            }
+
+            ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&deferred_pass, IID_PPV_ARGS(&m_deferred_pipelineState)));
+        }
+
     
         //UI Pass
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC ui_pass_pso_desc = psoDesc;
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC ui_pass_pso_desc = l_base_pso_desc;
         {
             ui_pass_pso_desc.VS = CD3DX12_SHADER_BYTECODE(ui_vs.Get());
             ui_pass_pso_desc.PS = CD3DX12_SHADER_BYTECODE(ui_ps.Get());
@@ -119,7 +125,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
 
 
         //UI Debug pass (Line)
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC ui_debug_pass_pso_desc = psoDesc;
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC ui_debug_pass_pso_desc = l_base_pso_desc;
         {
             ui_debug_pass_pso_desc.VS = CD3DX12_SHADER_BYTECODE(ui_vs_debug.Get());
             ui_debug_pass_pso_desc.PS = CD3DX12_SHADER_BYTECODE(ui_ps_debug.Get());
@@ -129,7 +135,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
 
 
         //Shadow Map Pass
-        D3D12_GRAPHICS_PIPELINE_STATE_DESC shadow_pso_desc = psoDesc;
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC shadow_pso_desc = l_base_pso_desc;
         {
             shadow_pso_desc.PS = {};
             shadow_pso_desc.VS = CD3DX12_SHADER_BYTECODE(shadow_map_vs.Get());
@@ -203,16 +209,14 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         l_view_port.Height = DEPTH_BUFFER_HEIGHT;
         shadow_cmd->RSSetViewports(1, &l_view_port);
         shadow_cmd->RSSetScissorRects(1, &m_scissorRect);
-        shadow_cmd->ClearDepthStencilView(m_shadow_map->GetDSV().cpu_handle, D3D12_CLEAR_FLAGS::D3D12_CLEAR_FLAG_DEPTH, 0.0f, 0, 0, nullptr);
         shadow_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        shadow_cmd->OMSetRenderTargets(0, nullptr, FALSE, &m_shadow_map->GetDSV().cpu_handle);
+        m_render_context->PreShadowMapping(shadow_cmd);
         //Set Vertex and Index Buffer.
         SetVertexAndIndexBuffer(shadow_cmd);
         //Render Scene
         RenderScene(shadow_cmd);
         m_shadow_map_cmd->Flush();
-        //Expose shadow map to shader.
-        DX12TransferManager::GetTransferManager().TransitionResource(*m_shadow_map, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
+        m_render_context->PostShadowMapping();
     }
     
 
@@ -240,7 +244,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         current_render_cmd->RSSetViewports(1, &m_viewport);
         current_render_cmd->RSSetScissorRects(1, &m_scissorRect);
 
-        m_render_context->PrepareToRender(current_render_cmd, m_current_frameindex);
+        m_render_context->PreDeferredPass(current_render_cmd, m_current_frameindex);
 
         current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         //Set Vertex and Index Buffer.
@@ -260,9 +264,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexCount()), 1, static_cast<uint32_t>(dummy_depth_debug->m_meshes[0]->GetIndexOffsetInBuffer()), static_cast<int32_t>(dummy_depth_debug->m_meshes[0]->GetVertexOffsetInBuffer()), 0);
 
         // Indicate that the back buffer will now be used to present.
-        m_render_context->PrepareToPresent(current_render_cmd, m_current_frameindex);
-        DX12TransferManager::GetTransferManager().TransitionResource(*m_shadow_map, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
-
+        m_render_context->PrePresent(current_render_cmd, m_current_frameindex);
         ThrowIfFailed(current_render_cmd->Close());
     }
    
@@ -272,12 +274,10 @@ void Renderer::DX12Renderer::InitCmdBuffers()
 {
     for (auto i = 0; i < m_render_cmd.size();++i)
     {
-        m_render_cmd[i] = std::unique_ptr<DX12RenderCommndBuffer>(new DX12RenderCommndBuffer(m_pipelineState.Get()));
+        m_render_cmd[i] = std::unique_ptr<DX12RenderCommndBuffer>(new DX12RenderCommndBuffer(m_deferred_pipelineState.Get()));
     }
 
     m_shadow_map_cmd = std::unique_ptr<DX12RenderCommndBuffer>(new DX12RenderCommndBuffer(m_shadow_map_pipelineState.Get()));
-
-
 }
 
 void Renderer::DX12Renderer::InitCameraUniform()
@@ -289,16 +289,6 @@ void Renderer::DX12Renderer::InitCameraUniform()
     m_main_camera_uniform = std::unique_ptr<UniformBuffer>(new UniformBuffer(CAMERA_UNIFORM_SIZE * 3));
 
     m_shadow_map_camera_uniform = std::unique_ptr<UniformBuffer>(new UniformBuffer(CAMERA_UNIFORM_SIZE * 3));
-
-}
-
-void Renderer::DX12Renderer::InitDepthBuffer()
-{
-    m_shadow_map = std::unique_ptr<DX12DepthBuffer>(new DX12DepthBuffer());
-    m_shadow_map->Create(L"ShadowMap", DEPTH_BUFFER_WIDTH, DEPTH_BUFFER_HEIGHT, DEPTH_BUFFER_FORMAT);
-    DX12TransferManager::GetTransferManager().TransitionResource(*m_shadow_map, D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_DEPTH_WRITE, true, D3D12_COMMAND_LIST_TYPE::D3D12_COMMAND_LIST_TYPE_DIRECT);
-
-
 }
 
 void Renderer::DX12Renderer::InitRootSignature()

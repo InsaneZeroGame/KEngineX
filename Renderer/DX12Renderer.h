@@ -38,7 +38,7 @@ namespace Renderer {
    
         Microsoft::WRL::ComPtr<ID3D12RootSignature> m_rootSignature;
 
-        Microsoft::WRL::ComPtr<ID3D12PipelineState> m_pipelineState;
+        Microsoft::WRL::ComPtr<ID3D12PipelineState> m_deferred_pipelineState;
 
         Microsoft::WRL::ComPtr<ID3D12PipelineState> m_shadow_map_pipelineState;
 
@@ -56,7 +56,6 @@ namespace Renderer {
         std::unique_ptr<UniformBuffer> m_main_camera_uniform;
 
 
-        std::unique_ptr<DX12DepthBuffer> m_shadow_map;
 
         std::unique_ptr<DX12RenderCommndBuffer> m_shadow_map_cmd;
 
@@ -71,12 +70,6 @@ namespace Renderer {
 
         enum {
             CAMERA_UNIFORM_SIZE = 256 //192 byte per buffer(3 buffers),256 for device alignment
-        };
-        enum {
-            DEPTH_BUFFER_WIDTH = 1920
-        };
-        enum {
-            DEPTH_BUFFER_HEIGHT = 1080
         };
 
         const Math::Matrix4 SHADOW_PREFIX = Math::Matrix4(Math::AffineTransform(Math::Matrix3::MakeScale(0.5f, -0.5f, 1.0f), Math::Vector3(0.5f, 0.5f, 0.0f)));
@@ -94,8 +87,6 @@ namespace Renderer {
         void InitCmdBuffers();
 
         void InitCameraUniform();
-
-        void InitDepthBuffer();
 
         void InitRootSignature();
 

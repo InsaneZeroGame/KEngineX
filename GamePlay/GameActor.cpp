@@ -20,4 +20,36 @@ gameplay::GameActor::~GameActor()
     }
 }
 
+void gameplay::GameActor::GenerateBoundingBox()
+{
+    Math::Point l_max = {};
+    Math::Point l_min = {};
+
+    for (auto mesh : m_meshes)
+    {
+        assert(!mesh->IsMeshDataReleased());
+        const auto& l_mesh_vertices = mesh->GetVertices();
+        for (const auto& vertex : l_mesh_vertices)
+        {
+            //Max
+            if (vertex.m_ui_color_vertex.position[0] > l_max.GetX())
+                l_max.SetX(vertex.m_ui_color_vertex.position[0]);
+            if (vertex.m_ui_color_vertex.position[1] > l_max.GetY())
+                l_max.SetY(vertex.m_ui_color_vertex.position[1]);
+            if (vertex.m_ui_color_vertex.position[2] > l_max.GetZ())
+                l_max.SetZ(vertex.m_ui_color_vertex.position[2]);
+            //Min
+            if (vertex.m_ui_color_vertex.position[0] < l_min.GetX())
+                l_min.SetX(vertex.m_ui_color_vertex.position[0]);
+            if (vertex.m_ui_color_vertex.position[1] < l_min.GetY())
+                l_min.SetY(vertex.m_ui_color_vertex.position[1]);
+            if (vertex.m_ui_color_vertex.position[2] < l_min.GetZ())
+                l_min.SetZ(vertex.m_ui_color_vertex.position[2]);
+        }
+    }
+
+
+    m_bounding_box = std::unique_ptr<Math::BoundingBox>(new Math::BoundingBox(l_max,l_min));
+}
+
 

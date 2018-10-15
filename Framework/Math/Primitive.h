@@ -12,9 +12,13 @@ namespace Math
     class Primitive
     {
     public:
-        Primitive() :m_vertices({}), m_indices({})
+        Primitive() :m_vertices({}), m_indices({}),m_color()
         {
             
+        };
+        Primitive(const Color& p_color) :m_vertices({}), m_indices({}), m_color(p_color)
+        {
+
         };
         virtual ~Primitive()
         {

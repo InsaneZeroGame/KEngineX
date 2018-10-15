@@ -22,6 +22,7 @@ namespace gameplay
         ~GameMesh();
 
         //It's called once data has been uploaded to GPU'S vram.
+
         void ReleaseMeshData();
 
         void AddVertices(const std::vector<Renderer::Vertex>& p_vertices);
@@ -31,6 +32,12 @@ namespace gameplay
         void AddVertices(std::vector<Renderer::Vertex>&& p_vertices);
 
         void AddIndices(std::vector<uint32_t>&& p_indices);
+
+        __forceinline bool IsMeshDataReleased() const
+        {
+            return m_is_data_released;
+        };
+
 
         __forceinline std::vector<Renderer::Vertex>& GetVertices()
         {
@@ -120,8 +127,7 @@ namespace gameplay
         std::array<float, 4> m_diffuse;
 
         uint32_t m_texture_id = 0;
-
-       
         
+        bool m_is_data_released = false;
     };//class GameMesh
 }//namespace gameplay

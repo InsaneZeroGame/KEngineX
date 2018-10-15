@@ -49,6 +49,7 @@ namespace gameplay
         std::vector<uint32_t> l_release_indices;
         l_release_indices.clear();
         m_indices.swap(l_release_indices);
+        m_is_data_released = true;
 
     }
     void GameMesh::AddVertices(const std::vector<Renderer::Vertex>& p_vertices)

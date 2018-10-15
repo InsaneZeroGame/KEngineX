@@ -473,7 +473,7 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
 
     //Init Debug UI
     dummy_debug_ui = std::unique_ptr<gameplay::GameUIActor>(new gameplay::GameUIActor("Dummy Debug UI"));
-    auto l_debug_ui_mesh = new gameplay::GameMesh("dummy_debug_ui_mesh", Math::Grid(15.0f, 30, {1.0f,0.0f,0.0f}));
+    auto l_debug_ui_mesh = new gameplay::GameMesh("dummy_debug_ui_mesh", Math::Grid(15.0f, 30, {0.8f,0.8f,0.8f }));
     assetlib::AssetManager::GetAssertManager().LoadMesh(l_debug_ui_mesh);
     dummy_debug_ui->AddMesh(l_debug_ui_mesh);
 

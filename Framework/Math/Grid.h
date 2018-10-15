@@ -8,11 +8,10 @@ namespace Math
     {
     public:
         Grid(float size, uint32_t count, const Color& p_color = {0.8f,0.8f,0.8f}) :
+            Primitive(p_color),
             m_size(size),
             m_count(count)
         {
-            m_color = p_color;
-
             std::vector<Line> l_lines;
 
             float line_step = 2 * m_size / float(m_count);

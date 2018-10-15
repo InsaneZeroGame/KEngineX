@@ -3,6 +3,8 @@
 #include "GameMesh.h"
 #include <unordered_map>
 #include <unordered_set>
+#include <Math/BoundingBox.h>
+
 namespace gameplay
 {
     using TextureId = uint32_t;
@@ -20,10 +22,14 @@ namespace gameplay
 
         std::vector<std::string> m_texture_names;
 
+        std::unique_ptr<Math::BoundingBox> m_bounding_box;
+
         __forceinline void AddMesh(GameMesh* p_mesh)
         {
             m_meshes.push_back(p_mesh);
         }
+
+        void GenerateBoundingBox();
 
 
     };

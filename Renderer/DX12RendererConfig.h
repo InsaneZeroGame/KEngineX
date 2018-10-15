@@ -37,4 +37,7 @@ namespace Renderer
 
     const int DEPTH_BUFFER_WIDTH = 1920;
     const int DEPTH_BUFFER_HEIGHT = 1080;
+
+
+    const bool ENABLE_ACTOR_BOUNDING_BOX = true;
 }

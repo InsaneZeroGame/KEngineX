@@ -40,11 +40,12 @@ void assetlib::AssetManager::LoadScene(const std::string & p_name)
         for (auto& l_mesh : l_scene->dummy_actor->m_meshes) 
         {
             LoadMesh(l_mesh);
-            if (ENABLE_ACTOR_BOUNDING_BOX)
-            {
-                l_scene->dummy_actor->GenerateBoundingBox();
-                LoadMesh(l_scene->dummy_actor->m_bounding_box_mesh);
-            }
+            
+        }
+        if (ENABLE_ACTOR_BOUNDING_BOX)
+        {
+            l_scene->dummy_actor->GenerateBoundingBox();
+            LoadMesh(l_scene->dummy_actor->m_bounding_box_mesh);
         }
     }
 

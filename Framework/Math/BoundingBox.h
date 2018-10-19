@@ -9,7 +9,7 @@ namespace Math
     {
     public:
         BoundingBox(const Point& max,const Point& min,
-            const Color& p_color = { 0.8f,0.8f,0.8f }) :
+            const Color& p_color = { 0.0f,1.0f,0.0f }) :
             Primitive(p_color)
         {
             m_vertices.resize(BoundingBoxVerticesCount);

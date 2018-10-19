@@ -133,6 +133,7 @@ void Renderer::DX12Renderer::InitGraphicsPipelines()
             ui_debug_pass_pso_desc.VS = CD3DX12_SHADER_BYTECODE(ui_vs_debug.Get());
             ui_debug_pass_pso_desc.PS = CD3DX12_SHADER_BYTECODE(ui_ps_debug.Get());
             ui_debug_pass_pso_desc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+            ui_debug_pass_pso_desc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_NONE;
             ThrowIfFailed(m_device->GetDX12Device()->CreateGraphicsPipelineState(&ui_debug_pass_pso_desc, IID_PPV_ARGS(&m_ui_debug_pipelineState)));
         }
 
@@ -260,6 +261,11 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         current_render_cmd->SetPipelineState(m_ui_debug_pipelineState.Get());
         current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_debug_ui->m_meshes[0]->GetIndexCount()), 1, static_cast<uint32_t>(dummy_debug_ui->m_meshes[0]->GetIndexOffsetInBuffer()), static_cast<int32_t>(dummy_debug_ui->m_meshes[0]->GetVertexOffsetInBuffer()), 0);
 
+        //Dummy Bounding Box
+        if (ENABLE_ACTOR_BOUNDING_BOX)
+        {
+            current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(m_scene->dummy_actor->m_bounding_box_mesh->GetIndexCount()), 1, static_cast<uint32_t>(m_scene->dummy_actor->m_bounding_box_mesh->GetIndexOffsetInBuffer()), static_cast<int32_t>(m_scene->dummy_actor->m_bounding_box_mesh->GetVertexOffsetInBuffer()), 0);
+        }
 
         //Render UI(Framebuffer Viewer)
         current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -492,6 +498,9 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
     auto l_debug_ui_mesh = new gameplay::GameMesh("dummy_debug_ui_mesh", Math::Grid(15.0f, 30, {0.8f,0.8f,0.8f }));
     assetlib::AssetManager::GetAssertManager().LoadMesh(l_debug_ui_mesh);
     dummy_debug_ui->AddMesh(l_debug_ui_mesh);
+
+    m_scene->dummy_actor->GenerateBoundingBox();
+    assetlib::AssetManager::GetAssertManager().LoadMesh(m_scene->dummy_actor->m_bounding_box_mesh);
 
     KFramework::IGPUStatic::ReleaseAllData();
 

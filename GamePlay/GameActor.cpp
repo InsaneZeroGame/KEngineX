@@ -22,8 +22,15 @@ gameplay::GameActor::~GameActor()
 
 void gameplay::GameActor::GenerateBoundingBox()
 {
-    Math::Point l_max = {};
-    Math::Point l_min = {};
+    uint32_t fp32_max_raw = 0x7f800000;
+    uint32_t fp32_min_raw = 0xff800000;
+
+    auto fp32_max = *((float*)(&fp32_max_raw));
+    auto fp32_min = *((float*)(&fp32_min_raw));
+
+
+    Math::Point l_max = { fp32_min ,fp32_min,fp32_min };
+    Math::Point l_min = { fp32_max,fp32_max,fp32_max };
 
     for (auto mesh : m_meshes)
     {

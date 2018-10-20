@@ -1,26 +1,22 @@
 #include "GameActor.h"
 #include <EngineConfig.h>
 
-gameplay::GameActor::GameActor(const std::string& p_name)
-    :SceneNode(p_name),
-    m_meshes({})
+gameplay::GameRenderActor::GameRenderActor(const std::string& p_name)
+    :GameActor(p_name),
+    RenderComponent()
 {
-    m_texture_names.push_back(KEngineConstants::ASSET_DIR + "\\textures\\default_texture1.jpg");
+
 }
 
 
-gameplay::GameActor::~GameActor()
+gameplay::GameRenderActor::~GameRenderActor()
 {
-    for (auto mesh : m_meshes) {
-        if (mesh)
-        {
-            delete mesh;
-            mesh = nullptr;
-        }
-    }
+    
 }
 
-void gameplay::GameActor::GenerateBoundingBox()
+
+
+void gameplay::RenderComponent::GenerateBoundingBox()
 {
     uint32_t fp32_max_raw = 0x7f800000;
     uint32_t fp32_min_raw = 0xff800000;

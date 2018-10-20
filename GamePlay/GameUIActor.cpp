@@ -1,7 +1,7 @@
 #include "GameUIActor.h"
 
 gameplay::GameUIActor::GameUIActor(const std::string& p_name):
-    GameActor(p_name)
+    GameRenderActor(p_name)
 {
 
 }

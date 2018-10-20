@@ -363,7 +363,7 @@ void Renderer::DX12Renderer::InitRootSignature()
         //Then it's color attachments(swapchain + other attachment).
         //Then it's textures
         const int l_swapchain_count = 1;
-        diffuse_desc_range.OffsetInDescriptorsFromTableStart = 2 + COLOR_ATTACHMENT_CONFIG.size() + l_swapchain_count;
+        diffuse_desc_range.OffsetInDescriptorsFromTableStart = 2 + static_cast<uint32_t>(COLOR_ATTACHMENT_CONFIG.size()) + l_swapchain_count;
         diffuse_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         diffuse_desc_range.RegisterSpace = 0;
 

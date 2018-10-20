@@ -13,7 +13,7 @@ namespace gameplay
         GamesScene(const std::string& p_name);
         ~GamesScene();
 
-        std::shared_ptr<GameActor>  dummy_actor;
+        std::shared_ptr<GameRenderActor>  dummy_actor;
 
         
         GameCamera m_main_camera;

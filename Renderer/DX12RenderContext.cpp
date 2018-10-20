@@ -30,7 +30,7 @@ void Renderer::DX12RenderContext::PreDeferredPass(ID3D12GraphicsCommandList * p_
         m_color_attachments[0]->GetRTV().cpu_handle,//Normal Attachment
     };
 
-    p_cmd_list->OMSetRenderTargets(rtv_handles.size(), rtv_handles.data(), FALSE, &m_depth_buffer->GetDSV().cpu_handle);
+    p_cmd_list->OMSetRenderTargets(static_cast<uint32_t>(rtv_handles.size()), rtv_handles.data(), FALSE, &m_depth_buffer->GetDSV().cpu_handle);
 
 }
 

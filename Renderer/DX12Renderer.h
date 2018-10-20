@@ -55,8 +55,6 @@ namespace Renderer {
 
         std::unique_ptr<UniformBuffer> m_main_camera_uniform;
 
-
-
         std::unique_ptr<DX12RenderCommndBuffer> m_shadow_map_cmd;
 
         std::unique_ptr<UniformBuffer> m_shadow_map_camera_uniform;

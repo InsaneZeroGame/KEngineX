@@ -4,7 +4,7 @@
 
 namespace gameplay
 {
-    class GameUIActor : public GameActor
+    class GameUIActor : public GameRenderActor
     {
     public:
         GameUIActor(const std::string& p_name);

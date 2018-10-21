@@ -4,16 +4,24 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <Math/BoundingBox.h>
+#include <Math/Matrix4.h>
 
 namespace gameplay
 {
     using TextureId = uint32_t;
 
+
     class RenderComponent
     {
     public:
         RenderComponent():
-            m_meshes({})
+            m_meshes({}),
+            m_model_matrix(
+                Math::Vector4(1.0f,0.0f,0.0f,0.0f),
+                Math::Vector4(0.0f, 1.0f, 0.0f, 0.0f),
+                Math::Vector4(0.0f, 0.0f, 1.0f, 0.0f),
+                Math::Vector4(0.0f, 0.0f, 0.0f, 1.0f)
+                )
         {
             m_texture_names.push_back(KEngineConstants::ASSET_DIR + "\\textures\\default_texture1.jpg");
         };
@@ -42,6 +50,8 @@ namespace gameplay
         std::vector<std::string> m_texture_names;
 
         std::shared_ptr<GameMesh> m_bounding_box_mesh;
+
+        Math::Matrix4 m_model_matrix;
     };
 
     class GameActor : public SceneNode

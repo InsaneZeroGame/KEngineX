@@ -32,9 +32,11 @@ PSInput main(float3 position : POSITION, float4 color : COLOR,float2 texture_coo
 {
 	PSInput result;
     matrix proj_view_matrix = mul(proj,view);
-	result.position = mul(proj_view_matrix,float4(position,1.0f));
+    matrix proj_view_model_matrix = mul(proj_view_matrix, model);
+	result.position = mul(proj_view_model_matrix,float4(position,1.0f));
 	result.color = color;
-    float4 shadow_coord = mul(shadow_matrix, float4(position, 1.0f));
+    matrix shadow_model_matrix = mul(shadow_matrix, model);
+    float4 shadow_coord = mul(shadow_model_matrix, float4(position, 1.0f));
     result.shadow_coord = shadow_coord.xyz / shadow_coord.w;
     result.texture_coord = texture_coord;
 	return result;

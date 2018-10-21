@@ -218,7 +218,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         //Set Vertex and Index Buffer.
         SetVertexAndIndexBuffer(shadow_cmd);
         //Render Scene
-        RenderScene(shadow_cmd);
+        RenderSceneShadow(shadow_cmd);
         m_shadow_map_cmd->Flush();
         m_render_context->PostShadowMapping();
     }
@@ -367,8 +367,6 @@ void Renderer::DX12Renderer::InitRootSignature()
         diffuse_desc_range.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
         diffuse_desc_range.RegisterSpace = 0;
 
-        
-
         std::vector<D3D12_DESCRIPTOR_RANGE> ranges = 
         {
             shadow_map_desc_range,
@@ -423,11 +421,25 @@ void Renderer::DX12Renderer::InitRootSignature()
 
 void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_render_cmd)
 {
+    //Update Actor Movement
+    memcpy(m_main_camera_uniform->data + CAMERA_UNIFORM_SIZE * m_current_frameindex + MATRIX_SIZE * 3, &m_scene->dummy_actor->m_model_matrix, MATRIX_SIZE);
+
     for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
     {
         current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, l_mesh->GetDiffuseMaterial(), 0);
         current_render_cmd->SetGraphicsRoot32BitConstant(2, l_mesh->GetTextureId(), 0);
         current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->GetIndexCount()), 1, static_cast<uint32_t>(l_mesh->GetIndexOffsetInBuffer()), static_cast<int32_t>(l_mesh->GetVertexOffsetInBuffer()),0);
+    }
+}
+
+void Renderer::DX12Renderer::RenderSceneShadow(ID3D12GraphicsCommandList *current_render_cmd)
+{
+    //Update Actor Movement
+    memcpy(m_shadow_map_camera_uniform->data + MATRIX_SIZE * 2, &m_scene->dummy_actor->m_model_matrix, MATRIX_SIZE);
+
+    for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
+    {
+        current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->GetIndexCount()), 1, static_cast<uint32_t>(l_mesh->GetIndexOffsetInBuffer()), static_cast<int32_t>(l_mesh->GetVertexOffsetInBuffer()), 0);
     }
 }
 
@@ -500,6 +512,9 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
     dummy_debug_ui->AddMesh(l_debug_ui_mesh);
 
     m_scene->dummy_actor->GenerateBoundingBox();
+
+    m_scene->dummy_actor->m_model_matrix =  Math::Matrix4::MakeTranslation(Math::Vector3(1.0f)) * m_scene->dummy_actor->m_model_matrix;
+
     assetlib::AssetManager::GetAssertManager().LoadMesh(m_scene->dummy_actor->m_bounding_box_mesh);
 
     KFramework::IGPUStatic::ReleaseAllData();

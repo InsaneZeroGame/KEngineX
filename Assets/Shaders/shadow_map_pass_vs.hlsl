@@ -20,6 +20,7 @@ PSInput main(float3 position : POSITION, float4 color : COLOR,float2 texture_coo
 {
     PSInput shadow_map_out;
     matrix proj_view_matrix = mul(proj,view);
-    shadow_map_out.position = mul(proj_view_matrix, float4(position,1.0));
+    matrix proj_view_model_matrix = mul(proj_view_matrix, model);
+    shadow_map_out.position = mul(proj_view_model_matrix, float4(position,1.0));
     return shadow_map_out;
 }

@@ -70,6 +70,11 @@ namespace Renderer {
             CAMERA_UNIFORM_SIZE = 256 //192 byte per buffer(3 buffers),256 for device alignment
         };
 
+        enum
+        {
+            MATRIX_SIZE = 64,
+        };
+
         const Math::Matrix4 SHADOW_PREFIX = Math::Matrix4(Math::AffineTransform(Math::Matrix3::MakeScale(0.5f, -0.5f, 1.0f), Math::Vector3(0.5f, 0.5f, 0.0f)));
 
     private:
@@ -89,6 +94,8 @@ namespace Renderer {
         void InitRootSignature();
 
         void RenderScene(ID3D12GraphicsCommandList*);
+
+        void RenderSceneShadow(ID3D12GraphicsCommandList*);
 
         void SetVertexAndIndexBuffer(ID3D12GraphicsCommandList* p_cmd);
 

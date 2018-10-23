@@ -5,8 +5,7 @@ namespace Renderer
 {
     struct UniformBuffer final : public DX12GpuBuffer 
     {
-        Microsoft::WRL::ComPtr<ID3D12Heap> heap;
-        uint8_t* data;
+        
         UniformBuffer(uint64_t p_size) : 
             DX12GpuBuffer()
         {
@@ -34,11 +33,23 @@ namespace Renderer
                 //Keeps it mapped.
                 GetResource()->Map(0, &l_range, reinterpret_cast<void**>(&data));
             }
+
+       
         }
 
         ~UniformBuffer()
         {
             
         }
+
+        __forceinline void UpdateBuffer(const void* src_data,size_t size,size_t offset = 0)
+        {
+            memcpy(data + offset, src_data, size);
+        };
+
+    private:
+        Microsoft::WRL::ComPtr<ID3D12Heap> heap;
+        uint8_t* data;
+
     };//Class UniformBuffer
 }//Namespace Renderer

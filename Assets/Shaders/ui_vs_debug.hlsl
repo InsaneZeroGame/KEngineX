@@ -27,7 +27,8 @@ UIPSInput main(float3 position : POSITION, float4 color : COLOR,float2 texture_c
 {
     UIPSInput result;
     matrix proj_view_matrix = mul(proj,view);
-	result.position = mul(proj_view_matrix,float4(position,1.0f));
+    matrix proj_view_model_matrix = mul(proj_view_matrix, model);
+	result.position = mul(proj_view_model_matrix,float4(position,1.0f));
 	result.color = color;
 	return result;
 }

@@ -206,7 +206,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
             m_scene->m_shadow_camera.GetProjMatrix(),
             m_scene->m_shadow_camera.GetViewMatrix()
         };
-        memcpy(m_shadow_map_camera_uniform->data, mvp, sizeof(Math::Matrix4) * 2);
+        m_shadow_map_camera_uniform->UpdateBuffer(mvp, sizeof(Math::Matrix4) * 2);
         shadow_cmd->SetGraphicsRootConstantBufferView(1, m_shadow_map_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
         D3D12_VIEWPORT l_view_port = m_viewport;
         l_view_port.Width = DEPTH_BUFFER_WIDTH;
@@ -238,8 +238,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
             m_scene->m_main_camera.GetViewMatrix(), 
             shadow_sample_matrix
         };
-        memcpy(m_main_camera_uniform->data + CAMERA_UNIFORM_SIZE * m_current_frameindex, mvp, sizeof(Math::Matrix4) * 3);
-
+        m_main_camera_uniform->UpdateBuffer(mvp, sizeof(Math::Matrix4) * 3, CAMERA_UNIFORM_SIZE * m_current_frameindex);
         current_render_cmd->SetGraphicsRootConstantBufferView(1, m_main_camera_uniform->GetGpuVirtualAddress()+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
         
         ID3D12DescriptorHeap* l_heaps[] = { m_device->GetDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV).Get() };
@@ -422,7 +421,7 @@ void Renderer::DX12Renderer::InitRootSignature()
 void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_render_cmd)
 {
     //Update Actor Movement
-    memcpy(m_main_camera_uniform->data + CAMERA_UNIFORM_SIZE * m_current_frameindex + MATRIX_SIZE * 3, &m_scene->dummy_actor->m_model_matrix, MATRIX_SIZE);
+    m_main_camera_uniform->UpdateBuffer(&m_scene->dummy_actor->m_model_matrix, MATRIX_SIZE, CAMERA_UNIFORM_SIZE * m_current_frameindex + MATRIX_SIZE * 3);
 
     for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
     {
@@ -435,7 +434,7 @@ void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_rend
 void Renderer::DX12Renderer::RenderSceneShadow(ID3D12GraphicsCommandList *current_render_cmd)
 {
     //Update Actor Movement
-    memcpy(m_shadow_map_camera_uniform->data + MATRIX_SIZE * 2, &m_scene->dummy_actor->m_model_matrix, MATRIX_SIZE);
+    m_shadow_map_camera_uniform->UpdateBuffer(&m_scene->dummy_actor->m_model_matrix, MATRIX_SIZE, MATRIX_SIZE * 2);
 
     for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
     {
@@ -513,7 +512,7 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
 
     m_scene->dummy_actor->GenerateBoundingBox();
 
-    m_scene->dummy_actor->m_model_matrix =  Math::Matrix4::MakeTranslation(Math::Vector3(1.0f)) * m_scene->dummy_actor->m_model_matrix;
+    m_scene->dummy_actor->m_model_matrix =  Math::Matrix4::MakeTranslation(Math::Vector3(0.5f)) * m_scene->dummy_actor->m_model_matrix;
 
     assetlib::AssetManager::GetAssertManager().LoadMesh(m_scene->dummy_actor->m_bounding_box_mesh);
 

@@ -21,8 +21,11 @@ cbuffer MVP: register(b1)
     matrix proj;
     matrix view;
     matrix shadow_matrix;
-    matrix model;
+};
 
+cbuffer ActorBuffer: register(b3)
+{
+    matrix model_matrix;
 };
 
 
@@ -32,10 +35,10 @@ PSInput main(float3 position : POSITION, float4 color : COLOR,float2 texture_coo
 {
 	PSInput result;
     matrix proj_view_matrix = mul(proj,view);
-    matrix proj_view_model_matrix = mul(proj_view_matrix, model);
+    matrix proj_view_model_matrix = mul(proj_view_matrix, model_matrix);
 	result.position = mul(proj_view_model_matrix,float4(position,1.0f));
 	result.color = color;
-    matrix shadow_model_matrix = mul(shadow_matrix, model);
+    matrix shadow_model_matrix = mul(shadow_matrix, model_matrix);
     float4 shadow_coord = mul(shadow_model_matrix, float4(position, 1.0f));
     result.shadow_coord = shadow_coord.xyz / shadow_coord.w;
     result.texture_coord = texture_coord;

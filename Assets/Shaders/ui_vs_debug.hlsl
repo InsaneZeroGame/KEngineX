@@ -16,8 +16,11 @@ cbuffer MVP: register(b1)
     matrix proj;
     matrix view;
     matrix shadow_matrix;
-    matrix model;
+};
 
+cbuffer ActorBuffer: register(b3)
+{
+    matrix model_matrix;
 };
 
 
@@ -27,7 +30,7 @@ UIPSInput main(float3 position : POSITION, float4 color : COLOR,float2 texture_c
 {
     UIPSInput result;
     matrix proj_view_matrix = mul(proj,view);
-    matrix proj_view_model_matrix = mul(proj_view_matrix, model);
+    matrix proj_view_model_matrix = mul(proj_view_matrix, model_matrix);
 	result.position = mul(proj_view_model_matrix,float4(position,1.0f));
 	result.color = color;
 	return result;

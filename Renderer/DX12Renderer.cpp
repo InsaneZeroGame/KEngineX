@@ -374,12 +374,21 @@ void Renderer::DX12Renderer::InitRootSignature()
         l_desc_table_parameter.DescriptorTable.NumDescriptorRanges = static_cast<uint32_t>(ranges.size());
         l_desc_table_parameter.DescriptorTable.pDescriptorRanges = ranges.data();
 
+        //Model Matrix.
+        D3D12_ROOT_PARAMETER l_model_matrix_parameter = {};
+        l_model_matrix_parameter.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+        l_model_matrix_parameter.ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;
+        l_model_matrix_parameter.Constants.Num32BitValues = 16;//4*4 float32
+        l_model_matrix_parameter.Constants.RegisterSpace = 0;
+        l_model_matrix_parameter.Constants.ShaderRegister = 3;
+
 
         std::vector<D3D12_ROOT_PARAMETER> l_parameters = {
             l_material_parameter,
             l_camera_parameter, 
             l_texture_id_parameter,
             l_desc_table_parameter,
+            l_model_matrix_parameter
         };
 
         D3D12_STATIC_SAMPLER_DESC l_shadow_sampler = {};
@@ -422,6 +431,7 @@ void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_rend
 {
     //Update Actor Movement
     m_main_camera_uniform->UpdateBuffer(&m_scene->dummy_actor->m_model_matrix, MATRIX_SIZE, CAMERA_UNIFORM_SIZE * m_current_frameindex + MATRIX_SIZE * 3);
+    current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &m_scene->dummy_actor->m_model_matrix, 0);
 
     for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
     {
@@ -435,7 +445,7 @@ void Renderer::DX12Renderer::RenderSceneShadow(ID3D12GraphicsCommandList *curren
 {
     //Update Actor Movement
     m_shadow_map_camera_uniform->UpdateBuffer(&m_scene->dummy_actor->m_model_matrix, MATRIX_SIZE, MATRIX_SIZE * 2);
-
+    current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &m_scene->dummy_actor->m_model_matrix, 0);
     for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
     {
         current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->GetIndexCount()), 1, static_cast<uint32_t>(l_mesh->GetIndexOffsetInBuffer()), static_cast<int32_t>(l_mesh->GetVertexOffsetInBuffer()), 0);

@@ -28,26 +28,14 @@ void assetlib::AssetManager::Destory()
 
 void assetlib::AssetManager::LoadScene(const std::string & p_name)
 {
-    using namespace Renderer;
+    auto l_scene = new gameplay::GamesScene(p_name);
+    assetlib::FBXLoader::GetFbxLoader().LoadFBXToScene(KEngineConstants::MODEL_ASSET_DIR + "kengine_scene_plane.fbx", l_scene);
+    assetlib::FBXLoader::GetFbxLoader().LoadFBXToScene(KEngineConstants::MODEL_ASSET_DIR + "kengine_scene_cube.fbx", l_scene);
+    assetlib::FBXLoader::GetFbxLoader().LoadFBXToScene(KEngineConstants::MODEL_ASSET_DIR + "kengine_scene_sephere.fbx", l_scene);
 
-    std::shared_ptr<gameplay::GamesScene> l_scene = assetlib::FBXLoader::GetFbxLoader().LoadFBX(KEngineConstants::MODEL_ASSET_DIR + p_name);
     assert(l_scene && "Nullptr!");
-
-    m_scenes[p_name] = l_scene;
-
-    {
-        // Define the geometry for a triangle.
-        for (auto& l_mesh : l_scene->dummy_actor->m_meshes) 
-        {
-            LoadMesh(l_mesh);
-            
-        }
-        if (ENABLE_ACTOR_BOUNDING_BOX)
-        {
-            l_scene->dummy_actor->GenerateBoundingBox();
-            LoadMesh(l_scene->dummy_actor->m_bounding_box_mesh);
-        }
-    }
+    m_scenes[p_name] = std::shared_ptr<gameplay::GamesScene>(l_scene);
+    
 
 }
 
@@ -80,6 +68,27 @@ void assetlib::AssetManager::LoadMesh(gameplay::GameMesh * l_mesh)
     //Release system memory used by vertices and indices.
     //They are useless now since we don't readback or reuse it.
     //l_mesh->ReleaseMeshData();
+}
+
+void assetlib::AssetManager::LoadSceneToRenderer(const std::string & p_name)
+{
+    using namespace Renderer;
+
+    for (auto l_actor : m_scenes[p_name]->m_actors)
+
+    {
+        // Define the geometry for a triangle.
+        for (auto& l_mesh : l_actor->m_meshes)
+        {
+            LoadMesh(l_mesh);
+
+        }
+        if (ENABLE_ACTOR_BOUNDING_BOX)
+        {
+            l_actor->GenerateBoundingBox();
+            LoadMesh(l_actor->m_bounding_box_mesh);
+        }
+    }
 }
 
 void assetlib::AssetManager::LoadMesh(std::shared_ptr<gameplay::GameMesh> l_mesh)

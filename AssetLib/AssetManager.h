@@ -35,6 +35,8 @@ namespace assetlib
 
         void LoadMesh(gameplay::GameMesh* p_mesh);
 
+        void LoadSceneToRenderer(const std::string& p_name);
+
         void LoadMesh(std::shared_ptr<gameplay::GameMesh> p_mesh);
 
         __forceinline std::shared_ptr<gameplay::GamesScene> GetScene(const std::string& p_name)

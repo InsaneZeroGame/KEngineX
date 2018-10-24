@@ -258,12 +258,23 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         //Render UI(Scene Related Debug Content)
         current_render_cmd->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINELIST);
         current_render_cmd->SetPipelineState(m_ui_debug_pipelineState.Get());
+        current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &dummy_debug_ui->m_model_matrix, 0);
         current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(dummy_debug_ui->m_meshes[0]->GetIndexCount()), 1, static_cast<uint32_t>(dummy_debug_ui->m_meshes[0]->GetIndexOffsetInBuffer()), static_cast<int32_t>(dummy_debug_ui->m_meshes[0]->GetVertexOffsetInBuffer()), 0);
 
         //Dummy Bounding Box
         if (ENABLE_ACTOR_BOUNDING_BOX)
         {
-            current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(m_scene->dummy_actor->m_bounding_box_mesh->GetIndexCount()), 1, static_cast<uint32_t>(m_scene->dummy_actor->m_bounding_box_mesh->GetIndexOffsetInBuffer()), static_cast<int32_t>(m_scene->dummy_actor->m_bounding_box_mesh->GetVertexOffsetInBuffer()), 0);
+            for (auto l_actor : m_scene->m_actors)
+            {
+                current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &l_actor->m_model_matrix, 0);
+                current_render_cmd->DrawIndexedInstanced(
+                    static_cast<uint32_t>(l_actor->m_bounding_box_mesh->GetIndexCount()),
+                    1,
+                    static_cast<uint32_t>(l_actor->m_bounding_box_mesh->GetIndexOffsetInBuffer()),
+                    static_cast<int32_t>(l_actor->m_bounding_box_mesh->GetVertexOffsetInBuffer()),
+                    0);
+
+            }
         }
 
         //Render UI(Framebuffer Viewer)
@@ -294,6 +305,7 @@ void Renderer::DX12Renderer::InitCameraUniform()
     //Matrix : 4x4 = 16 floats
     //MVP = Matrix * 3
     //Triple Buffer = MVP * 3;
+    //Todo : remove matrix, need to re-calc the size of buffer.
     m_main_camera_uniform = std::unique_ptr<UniformBuffer>(new UniformBuffer(CAMERA_UNIFORM_SIZE * 3));
 
     m_shadow_map_camera_uniform = std::unique_ptr<UniformBuffer>(new UniformBuffer(CAMERA_UNIFORM_SIZE * 3));
@@ -430,26 +442,33 @@ void Renderer::DX12Renderer::InitRootSignature()
 void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_render_cmd)
 {
     //Update Actor Movement
-    m_main_camera_uniform->UpdateBuffer(&m_scene->dummy_actor->m_model_matrix, MATRIX_SIZE, CAMERA_UNIFORM_SIZE * m_current_frameindex + MATRIX_SIZE * 3);
-    current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &m_scene->dummy_actor->m_model_matrix, 0);
 
-    for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
+    for (auto l_actor : m_scene->m_actors)
     {
-        current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, l_mesh->GetDiffuseMaterial(), 0);
-        current_render_cmd->SetGraphicsRoot32BitConstant(2, l_mesh->GetTextureId(), 0);
-        current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->GetIndexCount()), 1, static_cast<uint32_t>(l_mesh->GetIndexOffsetInBuffer()), static_cast<int32_t>(l_mesh->GetVertexOffsetInBuffer()),0);
+        current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &l_actor->m_model_matrix, 0);
+        for (auto & l_mesh : l_actor->m_meshes)
+        {
+            current_render_cmd->SetGraphicsRoot32BitConstants(0, 4, l_mesh->GetDiffuseMaterial(), 0);
+            current_render_cmd->SetGraphicsRoot32BitConstant(2, l_mesh->GetTextureId(), 0);
+            current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->GetIndexCount()), 1, static_cast<uint32_t>(l_mesh->GetIndexOffsetInBuffer()), static_cast<int32_t>(l_mesh->GetVertexOffsetInBuffer()), 0);
+        }
     }
 }
 
 void Renderer::DX12Renderer::RenderSceneShadow(ID3D12GraphicsCommandList *current_render_cmd)
 {
     //Update Actor Movement
-    m_shadow_map_camera_uniform->UpdateBuffer(&m_scene->dummy_actor->m_model_matrix, MATRIX_SIZE, MATRIX_SIZE * 2);
-    current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &m_scene->dummy_actor->m_model_matrix, 0);
-    for (auto & l_mesh : m_scene->dummy_actor->m_meshes)
+
+    for (auto l_actor : m_scene->m_actors)
     {
-        current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->GetIndexCount()), 1, static_cast<uint32_t>(l_mesh->GetIndexOffsetInBuffer()), static_cast<int32_t>(l_mesh->GetVertexOffsetInBuffer()), 0);
+        current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &l_actor->m_model_matrix, 0);
+
+        for (auto & l_mesh : l_actor->m_meshes)
+        {
+            current_render_cmd->DrawIndexedInstanced(static_cast<uint32_t>(l_mesh->GetIndexCount()), 1, static_cast<uint32_t>(l_mesh->GetIndexOffsetInBuffer()), static_cast<int32_t>(l_mesh->GetVertexOffsetInBuffer()), 0);
+        }
     }
+  
 }
 
 
@@ -485,27 +504,31 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
     m_scene = p_scene;
 
     //const int color_attachment_heap_offset = COLOR_ATTACHMENT_CONFIG.size();
-
-    for (auto l_texture_id = 0  ; l_texture_id < m_scene->dummy_actor->m_texture_names.size() ; ++l_texture_id)
+    for (auto l_actor : m_scene->m_actors)
     {
-        //Skip if default texture
-        auto l_texture_name_to_load = m_scene->dummy_actor->m_texture_names[l_texture_id];
-        if (l_texture_name_to_load == KEngineConstants::DEFAULT_TEXTURE_NAME) continue;
-        //Skip if texture loaded already.
-        int w, h, comp;
-        unsigned char* image = stbi_load((l_texture_name_to_load).c_str(), &w, &h, &comp, STBI_rgb_alpha);
-    
-        uint8_t black_image[4] = { 0,0,0,0 };
+        for (auto l_texture_id = 0; l_texture_id < l_actor->m_texture_names.size(); ++l_texture_id)
+        {
+            //Skip if default texture
+            auto l_texture_name_to_load = l_actor->m_texture_names[l_texture_id];
+            if (l_texture_name_to_load == KEngineConstants::DEFAULT_TEXTURE_NAME) continue;
+            //Skip if texture loaded already.
+            int w, h, comp;
+            unsigned char* image = stbi_load((l_texture_name_to_load).c_str(), &w, &h, &comp, STBI_rgb_alpha);
 
-        DX12Texture* l_texture = new DX12Texture;
-        l_texture->Create(L"TextureFormDisk", 1, w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
-        m_dummy_actor_textures.push_back(std::unique_ptr<DX12Texture>(l_texture));
+            uint8_t black_image[4] = { 0,0,0,0 };
 
-        auto& meshes_use_this_texture = m_scene->dummy_actor->m_texture_map.equal_range(l_texture_name_to_load);
-        for (auto l_mesh = meshes_use_this_texture.first; l_mesh != meshes_use_this_texture.second; ++l_mesh) {
-            m_scene->dummy_actor->m_meshes[l_mesh->second]->SetTextureId(l_texture_id);
+            DX12Texture* l_texture = new DX12Texture;
+            l_texture->Create(L"TextureFormDisk", 1, w, h, DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM, image);
+            m_dummy_actor_textures.push_back(std::unique_ptr<DX12Texture>(l_texture));
+
+            auto& meshes_use_this_texture = l_actor->m_texture_map.equal_range(l_texture_name_to_load);
+            for (auto l_mesh = meshes_use_this_texture.first; l_mesh != meshes_use_this_texture.second; ++l_mesh) {
+                l_actor->m_meshes[l_mesh->second]->SetTextureId(l_texture_id);
+            }
         }
+
     }
+
 
     //Init UI
     dummy_depth_debug = std::unique_ptr<gameplay::GameUIActor>(new gameplay::GameUIActor("Dummy UI"));
@@ -520,11 +543,18 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
     assetlib::AssetManager::GetAssertManager().LoadMesh(l_debug_ui_mesh);
     dummy_debug_ui->AddMesh(l_debug_ui_mesh);
 
-    m_scene->dummy_actor->GenerateBoundingBox();
+    for (auto l_actor : m_scene->m_actors)
+    {
+        l_actor->GenerateBoundingBox();
 
-    m_scene->dummy_actor->m_model_matrix =  Math::Matrix4::MakeTranslation(Math::Vector3(0.5f)) * m_scene->dummy_actor->m_model_matrix;
 
-    assetlib::AssetManager::GetAssertManager().LoadMesh(m_scene->dummy_actor->m_bounding_box_mesh);
+        assetlib::AssetManager::GetAssertManager().LoadMesh(l_actor->m_bounding_box_mesh);
+    }
+
+    m_scene->m_actors[0]->m_model_matrix = Math::Matrix4::MakeTranslation(Math::Vector3(-5.0f, 0.0f, -5.0f)) * m_scene->m_actors[0]->m_model_matrix;
+    m_scene->m_actors[1]->m_model_matrix = Math::Matrix4::MakeTranslation(Math::Vector3(5.0f, 0.0f, 5.0f)) * m_scene->m_actors[1]->m_model_matrix;
+    m_scene->m_actors[2]->m_model_matrix = Math::Matrix4::MakeTranslation(Math::Vector3(-5.0f, 0.0f, 5.0f)) * m_scene->m_actors[2]->m_model_matrix;
+
 
     KFramework::IGPUStatic::ReleaseAllData();
 

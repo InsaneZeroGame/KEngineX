@@ -13,15 +13,14 @@ namespace assetlib
     {
     public:
         ~FBXLoader();
-        std::unique_ptr<gameplay::GamesScene> LoadFBX(const std::string& p_file_name);
+        bool LoadFBXToScene(const std::string& p_file_name,gameplay::GamesScene* p_scene);
         static FBXLoader& GetFbxLoader()
         {
             static FBXLoader l_loader;
             return l_loader;
         };
-
     private:
-        gameplay::GamesScene* m_scene;
+        gameplay::GamesScene* m_scene = nullptr;
     private:
         FBXLoader();
         void DisplayTextureNames(FbxProperty &pProperty, FbxString& pConnectionString);

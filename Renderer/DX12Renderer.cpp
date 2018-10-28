@@ -203,8 +203,8 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         shadow_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
         //Update Shadow Camera Uniform
         Math::Matrix4 mvp[2] = {
-            m_scene->m_shadow_camera.GetProjMatrix(),
-            m_scene->m_shadow_camera.GetViewMatrix()
+            m_scene->GetShadowCamera().GetProjMatrix(),
+            m_scene->GetShadowCamera().GetViewMatrix()
         };
         m_shadow_map_camera_uniform->UpdateBuffer(mvp, sizeof(Math::Matrix4) * 2);
         shadow_cmd->SetGraphicsRootConstantBufferView(1, m_shadow_map_camera_uniform->GetGpuVirtualAddress());//+ CAMERA_UNIFORM_SIZE * m_current_frameindex);
@@ -232,10 +232,10 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         current_render_cmd->SetGraphicsRootSignature(m_rootSignature.Get());
         //Update Main Camera uniform
         using namespace Math;
-        auto shadow_sample_matrix = SHADOW_PREFIX * m_scene->m_shadow_camera.GetViewProjMatrix();
+        auto shadow_sample_matrix = SHADOW_PREFIX * m_scene->GetShadowCamera().GetViewProjMatrix();
         Math::Matrix4 mvp[3] = { 
-            m_scene->m_main_camera.GetProjMatrix(),
-            m_scene->m_main_camera.GetViewMatrix(), 
+            m_scene->GetMainCamera().GetProjMatrix(),
+            m_scene->GetMainCamera().GetViewMatrix(), 
             shadow_sample_matrix
         };
         m_main_camera_uniform->UpdateBuffer(mvp, sizeof(Math::Matrix4) * 3, CAMERA_UNIFORM_SIZE * m_current_frameindex);
@@ -264,7 +264,7 @@ void Renderer::DX12Renderer::RecordGraphicsCmd()
         //Dummy Bounding Box
         if (ENABLE_ACTOR_BOUNDING_BOX)
         {
-            for (auto l_actor : m_scene->m_actors)
+            for (auto l_actor : m_scene->GetActors())
             {
                 current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &l_actor->m_model_matrix, 0);
                 current_render_cmd->DrawIndexedInstanced(
@@ -443,7 +443,7 @@ void Renderer::DX12Renderer::RenderScene(ID3D12GraphicsCommandList* current_rend
 {
     //Update Actor Movement
 
-    for (auto l_actor : m_scene->m_actors)
+    for (auto l_actor : m_scene->GetActors())
     {
         current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &l_actor->m_model_matrix, 0);
         for (auto & l_mesh : l_actor->m_meshes)
@@ -459,7 +459,7 @@ void Renderer::DX12Renderer::RenderSceneShadow(ID3D12GraphicsCommandList *curren
 {
     //Update Actor Movement
 
-    for (auto l_actor : m_scene->m_actors)
+    for (auto l_actor : m_scene->GetActors())
     {
         current_render_cmd->SetGraphicsRoot32BitConstants(4, 16, &l_actor->m_model_matrix, 0);
 
@@ -504,7 +504,7 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
     m_scene = p_scene;
 
     //const int color_attachment_heap_offset = COLOR_ATTACHMENT_CONFIG.size();
-    for (auto l_actor : m_scene->m_actors)
+    for (auto l_actor : m_scene->GetActors())
     {
         for (auto l_texture_id = 0; l_texture_id < l_actor->m_texture_names.size(); ++l_texture_id)
         {
@@ -543,7 +543,7 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
     assetlib::AssetManager::GetAssertManager().LoadMesh(l_debug_ui_mesh);
     dummy_debug_ui->AddMesh(l_debug_ui_mesh);
 
-    for (auto l_actor : m_scene->m_actors)
+    for (auto l_actor : m_scene->GetActors())
     {
         l_actor->GenerateBoundingBox();
 
@@ -551,9 +551,9 @@ void Renderer::DX12Renderer::SetCurrentScene(std::shared_ptr<gameplay::GamesScen
         assetlib::AssetManager::GetAssertManager().LoadMesh(l_actor->m_bounding_box_mesh);
     }
 
-    m_scene->m_actors[0]->m_model_matrix = Math::Matrix4::MakeTranslation(Math::Vector3(-5.0f, 0.0f, -5.0f)) * m_scene->m_actors[0]->m_model_matrix;
-    m_scene->m_actors[1]->m_model_matrix = Math::Matrix4::MakeTranslation(Math::Vector3(5.0f, 0.0f, 5.0f)) * m_scene->m_actors[1]->m_model_matrix;
-    m_scene->m_actors[2]->m_model_matrix = Math::Matrix4::MakeTranslation(Math::Vector3(-5.0f, 0.0f, 5.0f)) * m_scene->m_actors[2]->m_model_matrix;
+    m_scene->GetActors()[0]->m_model_matrix = Math::Matrix4::MakeTranslation(Math::Vector3(-5.0f, 0.0f, -5.0f)) * m_scene->GetActors()[0]->m_model_matrix;
+    m_scene->GetActors()[1]->m_model_matrix = Math::Matrix4::MakeTranslation(Math::Vector3(5.0f, 0.0f, 5.0f)) * m_scene->GetActors()[1]->m_model_matrix;
+    m_scene->GetActors()[2]->m_model_matrix = Math::Matrix4::MakeTranslation(Math::Vector3(-5.0f, 0.0f, 5.0f)) * m_scene->GetActors()[2]->m_model_matrix;
 
 
     KFramework::IGPUStatic::ReleaseAllData();

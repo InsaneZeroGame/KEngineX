@@ -1,7 +1,6 @@
 #pragma once
 #include <INoCopy.h>
 #include <IModule.h>
-#include <AssetManager.h>
 #include <IRenderer.h>
 
 
@@ -38,13 +37,19 @@ namespace gameplay
             m_renderer = p_renderer;
         }
 
+        __forceinline std::shared_ptr<gameplay::GamesScene> GetScene(const std::string& p_name)
+        {
+            return m_scenes[p_name];
+        }
 
     private:
         GameDirector();
 
-        assetlib::AssetManager* m_asset_manager = nullptr;
-
        Renderer::IRenderer* m_renderer = nullptr;
+
+       using SceneMap = std::unordered_map < std::string, std::shared_ptr<gameplay::GamesScene>>;
+
+       SceneMap m_scenes;
 
     };//Class GameDirector
 }//Namespace gameplay

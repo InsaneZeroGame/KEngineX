@@ -22,6 +22,11 @@ namespace gameplay
             m_children.push_back(p_node);
         }
 
+        __forceinline const std::string& GetName() const
+        {
+            return m_name;
+        }
+
         std::shared_ptr<SceneNode> FindChildren(const std::string& p_name)
         {
             for (auto& child : m_children) 

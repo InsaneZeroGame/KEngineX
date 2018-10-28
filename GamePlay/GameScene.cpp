@@ -1,4 +1,5 @@
 #include "GameScene.h"
+#include <AssetManager.h>
 
 gameplay::GamesScene::GamesScene(const std::string& p_name) :
     SceneNode(p_name),
@@ -10,10 +11,7 @@ gameplay::GamesScene::GamesScene(const std::string& p_name) :
 
 }
 
-void gameplay::GamesScene::AddActor(std::string p_name)
-{
-    m_actors.push_back(new GameRenderActor(p_name));
-}
+
 
 gameplay::GamesScene::~GamesScene()
 {
@@ -25,4 +23,10 @@ gameplay::GamesScene::~GamesScene()
             actor = nullptr;
         }
     }
+}
+
+void gameplay::GamesScene::LoadSceneContent(const std::string& p_name)
+{
+    assetlib::AssetManager::GetAssertManager().LoadSceneContent(p_name, this);
+
 }

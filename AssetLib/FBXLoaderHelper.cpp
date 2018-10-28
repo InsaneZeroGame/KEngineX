@@ -22,8 +22,10 @@ namespace assetlib
     {
     }
 
-    bool FBXLoader::LoadFBXToScene(const std::string& p_file_name, gameplay::GamesScene* p_scene)
+    bool FBXLoader::LoadFBXToScene(const std::string& p_name, gameplay::GamesScene* p_scene)
     {
+        const auto& p_file_name = KEngineConstants::MODEL_ASSET_DIR + p_name + ".fbx";
+
         m_scene = p_scene;
         int lFileMajor, lFileMinor, lFileRevision;
         int lSDKMajor, lSDKMinor, lSDKRevision;
@@ -105,6 +107,7 @@ namespace assetlib
         DisplayContent(pScene, m_scene);
         pScene->Destroy();
         lImporter->Destroy();
+
         using namespace gameplay;
 
         //Setup Main Camera
@@ -112,18 +115,19 @@ namespace assetlib
         Vector3 at = Vector3(0.0f, 0.0f, 0.0f);
         Vector3 up = Vector3(0.0f, 1.0f, 0.0f);
 
-        m_scene->m_main_camera.SetEyeAtUp(eye, at, up);
-        m_scene->m_main_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 8.0f, 55.0f);
-        m_scene->m_main_camera.Update();
+        m_scene->GetMainCamera().SetEyeAtUp(eye, at, up);
+        m_scene->GetMainCamera().SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 8.0f, 55.0f);
+        m_scene->GetMainCamera().Update();
 
         //Setup Shadow Camera
         eye = Vector3(30.0f, 30.0f, -30.0f);
         at = Vector3(0.0f, 0.0f, 0.0f);
         up = Vector3(0.0f, 1.0f, 0.0f);
 
-        m_scene->m_shadow_camera.SetEyeAtUp(eye, at, up);
-        m_scene->m_shadow_camera.SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 20.0f, 75.0f);
-        m_scene->m_shadow_camera.Update();
+        m_scene->GetShadowCamera().SetEyeAtUp(eye, at, up);
+        m_scene->GetShadowCamera().SetPerspectiveMatrix(45.0f * 3.1415f / 180.0f, 600.0f / 800.0f, 20.0f, 75.0f);
+        m_scene->GetShadowCamera().Update();
+
 
         return true;
     }
@@ -152,7 +156,7 @@ namespace assetlib
         //DisplayMaterial(lMesh);
         DisplayTexture(lMesh);
         //DisplayMaterialConnections(lMesh);
-        p_game_scene->m_actors[p_game_scene->m_actors.size()-1] ->m_meshes.push_back(l_game_mesh);
+        p_game_scene->GetActors()[p_game_scene->GetActors().size()-1] ->m_meshes.push_back(l_game_mesh);
     }
     void FBXLoader::DisplayContent(FbxNode* pNode, gameplay::GamesScene* p_game_scene)
     {
@@ -1034,11 +1038,14 @@ namespace assetlib
         {
             DisplayString("            File Name: \"", (char *)lFileTexture->GetFileName(), "\"");
             auto lFileName = std::string((char *)lFileTexture->GetFileName());
-            if (m_scene->m_actors[m_scene->m_actors.size() - 1]->m_texture_map.find(lFileName) == m_scene->m_actors[m_scene->m_actors.size() - 1]->m_texture_map.end())
+
+            auto l_new_actor = m_scene->GetActors()[m_scene->GetActors().size() - 1];
+
+            if (l_new_actor->m_texture_map.find(lFileName) == l_new_actor->m_texture_map.end())
             {
-                m_scene->m_actors[m_scene->m_actors.size() - 1]->m_texture_names.push_back(lFileName);
+                l_new_actor->m_texture_names.push_back(lFileName);
             }
-            m_scene->m_actors[m_scene->m_actors.size() - 1]->m_texture_map.insert(std::pair<std::string,int32_t>(std::string(lFileTexture->GetFileName()),static_cast<int32_t>(m_scene->m_actors[m_scene->m_actors.size() - 1]->m_meshes.size())));
+            l_new_actor->m_texture_map.insert(std::pair<std::string,int32_t>(std::string(lFileTexture->GetFileName()),static_cast<int32_t>(l_new_actor->m_meshes.size())));
         }
         else if (lProceduralTexture)
         {

@@ -23,26 +23,19 @@ namespace assetlib
             return &GetAssertManager();
         }
 
-        
-        
         ~AssetManager();
 
     public:
         
         virtual void Destory() override;
 
-        void LoadScene(const std::string& p_name);
-
+        void LoadSceneContent(const std::string& p_name,gameplay::GamesScene* p_scene);
+        
         void LoadMesh(gameplay::GameMesh* p_mesh);
 
-        void LoadSceneToRenderer(const std::string& p_name);
-
         void LoadMesh(std::shared_ptr<gameplay::GameMesh> p_mesh);
-
-        __forceinline std::shared_ptr<gameplay::GamesScene> GetScene(const std::string& p_name)
-        {
-            return m_scenes[p_name];
-        }
+        
+        void LoadSceneToRenderer(gameplay::GamesScene*);
 
     private:
         // Inherited via IModule
@@ -50,11 +43,10 @@ namespace assetlib
 
         virtual void Update() override;
 
+
     private:
 
-        using SceneMap = std::unordered_map < std::string, std::shared_ptr<gameplay::GamesScene>>;
-
-         SceneMap m_scenes;
+        
 
         AssetManager();
     };//AssetManager

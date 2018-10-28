@@ -11,18 +11,54 @@ namespace gameplay
     {
     public:
         GamesScene(const std::string& p_name);
+
         ~GamesScene();
 
-        //std::shared_ptr<GameRenderActor>  dummy_actor;
+        __forceinline GameRenderActor* GetActor(const std::string& p_name)
+        {
+            for (auto actor : m_actors)
+            {
+                if (actor->GetName() == p_name)
+                {
+                    return actor;
+                }
+            }
+            return nullptr;
+        }
 
+        void LoadSceneContent(const std::string& p_name);
+
+        __forceinline void AddActor(std::string p_name)
+        {
+            m_actors.push_back(new GameRenderActor(p_name));
+        }
+
+        __forceinline void AddActor(GameRenderActor * p_actor)
+        {
+            m_actors.push_back(p_actor);
+        }
+
+        __forceinline std::vector<GameRenderActor*>& GetActors()
+        {
+            return m_actors;
+        }
+
+        __forceinline GameCamera& GetMainCamera()
+        {
+            return m_main_camera;
+        }
+
+        __forceinline GameCamera& GetShadowCamera()
+        {
+            return m_shadow_camera;
+        }
+
+    private:
+        
         std::vector<GameRenderActor*> m_actors;
         
         GameCamera m_main_camera;
+        
         GameCamera m_shadow_camera;
-
-        void AddActor(std::string p_name);
-
-    private:
-
     };//class GameScene
 }//namespace GamePlay

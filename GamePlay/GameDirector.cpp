@@ -1,5 +1,7 @@
 #include "GameDirector.h"
 #include <future>
+std::string dummy_scene_name = "GameScene.fbx";
+
 
 gameplay::GameDirector::GameDirector()
 {
@@ -12,21 +14,18 @@ gameplay::GameDirector::~GameDirector()
 
 void gameplay::GameDirector::Init()
 {
-    m_asset_manager = assetlib::AssetManager::GetAssertManagerPtr();
+    auto l_scene = new gameplay::GamesScene(dummy_scene_name);
+    
+    l_scene->LoadSceneContent(dummy_scene_name);
+    
+    m_scenes[dummy_scene_name] = std::shared_ptr<gameplay::GamesScene>(l_scene);
 
-    std::string scene_name = "GameScene.fbx";
 
-    //auto res = std::async(std::launch::async,&assetlib::AssetManager::LoadScene,m_asset_manager, scene_name);
-    assetlib::AssetManager::GetAssertManager().LoadScene(scene_name);
-    assetlib::AssetManager::GetAssertManager().LoadSceneToRenderer(scene_name);
-    //m_asset_manager->LoadScene("crytek-sponza.obj");
 }
 
 void gameplay::GameDirector::Update()
 {
-    std::string scene_name = "GameScene.fbx";
-
-    m_renderer->SetCurrentScene(m_asset_manager->GetScene(scene_name));
+    m_renderer->SetCurrentScene(m_scenes[dummy_scene_name]);
 }
 
 void gameplay::GameDirector::Destory()

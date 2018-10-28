@@ -26,17 +26,23 @@ void assetlib::AssetManager::Destory()
 {
 }
 
-void assetlib::AssetManager::LoadScene(const std::string & p_name)
+void assetlib::AssetManager::LoadSceneContent(const std::string & p_name, gameplay::GamesScene* l_scene)
 {
-    auto l_scene = new gameplay::GamesScene(p_name);
-    assetlib::FBXLoader::GetFbxLoader().LoadFBXToScene(KEngineConstants::MODEL_ASSET_DIR + "kengine_scene_plane.fbx", l_scene);
-    assetlib::FBXLoader::GetFbxLoader().LoadFBXToScene(KEngineConstants::MODEL_ASSET_DIR + "kengine_scene_cube.fbx", l_scene);
-    assetlib::FBXLoader::GetFbxLoader().LoadFBXToScene(KEngineConstants::MODEL_ASSET_DIR + "kengine_scene_sephere.fbx", l_scene);
+    std::vector<std::string> files_to_load = 
+    {
+        "kengine_scene_plane",
+        "kengine_scene_cube",
+        "kengine_scene_sephere"
+    };
+
+    for (auto& file_name : files_to_load)
+    {
+        assetlib::FBXLoader::GetFbxLoader().LoadFBXToScene(file_name, l_scene);
+    }
 
     assert(l_scene && "Nullptr!");
-    m_scenes[p_name] = std::shared_ptr<gameplay::GamesScene>(l_scene);
     
-
+    LoadSceneToRenderer(l_scene);
 }
 
 void assetlib::AssetManager::LoadMesh(gameplay::GameMesh * l_mesh)
@@ -70,11 +76,11 @@ void assetlib::AssetManager::LoadMesh(gameplay::GameMesh * l_mesh)
     //l_mesh->ReleaseMeshData();
 }
 
-void assetlib::AssetManager::LoadSceneToRenderer(const std::string & p_name)
+void assetlib::AssetManager::LoadSceneToRenderer(gameplay::GamesScene* p_scene)
 {
     using namespace Renderer;
 
-    for (auto l_actor : m_scenes[p_name]->m_actors)
+    for (auto l_actor : p_scene->GetActors())
 
     {
         // Define the geometry for a triangle.
@@ -116,7 +122,7 @@ void assetlib::AssetManager::LoadMesh(std::shared_ptr<gameplay::GameMesh> l_mesh
 
     DX12TransferManager::GetTransferManager().AddTransferJob(&l_index_upload_job, true);
     l_mesh->SetIndexOffsetInBuffer(l_index_upload_job.index_offet);
-
+    l_mesh->SetReleased();
     //Release system memory used by vertices and indices.
     //They are useless now since we don't readback or reuse it.
     //l_mesh->ReleaseMeshData();
